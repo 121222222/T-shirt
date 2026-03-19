@@ -393,4 +393,3 @@ function rLogs(c){
 // ========== 启动 ==========
 initDemo();
 render();
-</script>
