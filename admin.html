@@ -222,6 +222,133 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
 .size-detail-table td.num{font-variant-numeric:tabular-nums}
 .table-scroll-wrap{overflow-x:auto;overflow-y:auto;max-height:calc(92vh - 200px);border:1px solid #e0e0e0;border-radius:12px}
 .export-bar{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+
+/* ========== 步骤指示器 ========== */
+.step-indicator{display:flex;gap:8px;margin-bottom:24px;border-bottom:2px solid #f0f0f0;padding-bottom:12px}
+.step-item{font-size:13px;color:#999;cursor:pointer;padding:6px 16px;border-radius:8px;transition:all .2s;white-space:nowrap}
+.step-item:hover{color:#666;background:#f5f5f5}
+.step-item.active{color:var(--sidebar);background:var(--accent);font-weight:600}
+.step-item.done{color:#00c853}
+.step-num{margin-right:4px}
+.step-content{animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ========== 上传区域 ========== */
+.upload-area{border:2px dashed #d0d0d0;border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafafa}
+.upload-area:hover{border-color:var(--accent);background:#f5fde8}
+.upload-icon{font-size:36px;margin-bottom:8px;color:#999}
+.upload-text{font-size:13px;color:#888}
+.upload-preview{max-width:200px;max-height:160px;border-radius:8px;margin-top:8px;border:1px solid #e0e0e0}
+
+/* ========== 项目管理页面头部 ========== */
+.proj-mgr-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.proj-mgr-title-btn{padding:10px 24px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:none;background:var(--accent);color:var(--sidebar);box-shadow:0 4px 15px rgba(198,255,0,.25)}
+
+/* ========== 操作链接 - 红色删除 ========== */
+.action-link-red{color:#ff5252}
+.action-link-red:hover{background:rgba(255,82,82,.1)}
+
+/* ========== 新建项目大页面 ========== */
+.np-page{padding-bottom:40px}
+.np-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.np-page-title{font-size:22px;font-weight:700;color:var(--text-dark)}
+.np-page-title .info-icon{font-size:14px;color:#999;margin-left:6px;cursor:pointer}
+.np-header-btns{display:flex;gap:10px}
+.np-header-btns .btn{padding:8px 18px;font-size:13px}
+
+/* 步骤指示器-大页面版 */
+.np-steps{display:flex;align-items:center;gap:6px;margin-bottom:32px}
+.np-step-item{display:flex;align-items:center;gap:6px;font-size:14px;color:#999;cursor:pointer;padding:6px 12px;border-radius:8px;transition:all .2s}
+.np-step-item:hover{color:#666;background:#f5f5f5}
+.np-step-item.active{color:#1565c0;font-weight:700}
+.np-step-item.done{color:#00c853}
+.np-step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;border:2px solid #d0d0d0;color:#999;background:#fff;flex-shrink:0}
+.np-step-item.active .np-step-num{border-color:#1565c0;color:#fff;background:#1565c0}
+.np-step-item.done .np-step-num{border-color:#00c853;color:#fff;background:#00c853}
+.np-step-arrow{color:#d0d0d0;font-size:16px;margin:0 4px}
+
+/* 制作H5布局：左侧预览+右侧配置 */
+.np-h5-layout{display:flex;gap:24px;align-items:flex-start}
+.np-h5-left{display:flex;gap:12px;flex-shrink:0;position:sticky;top:0}
+.np-phone-wrap{width:280px;flex-shrink:0}
+.np-phone{width:280px;height:500px;border:2px solid #e0e0e0;border-radius:24px;overflow:hidden;background:#000;position:relative;box-shadow:0 4px 20px rgba(0,0,0,.1)}
+.np-phone-status{height:28px;background:#000;display:flex;align-items:center;justify-content:space-between;padding:4px 16px;font-size:10px;color:#fff}
+.np-phone-nav{height:36px;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;font-size:13px;font-weight:600;color:#333;border-bottom:1px solid #f0f0f0}
+.np-phone-body{height:calc(100% - 64px);background:#fff;overflow-y:auto;position:relative}
+.np-phone-body img{width:100%;display:block}
+.np-phone-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ccc;font-size:14px;gap:8px}
+
+/* 页面缩略图列表 */
+.np-thumb-list{width:80px;display:flex;flex-direction:column;align-items:center;gap:8px;max-height:500px;overflow-y:auto;padding:4px}
+.np-thumb-scroll{display:flex;flex-direction:column;gap:8px}
+.np-thumb-nav{width:28px;height:28px;border-radius:50%;border:1px solid #d0d0d0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:#999;transition:all .2s;flex-shrink:0}
+.np-thumb-nav:hover{border-color:#1565c0;color:#1565c0}
+.np-thumb-item{width:60px;height:100px;border:2px solid #e0e0e0;border-radius:6px;cursor:pointer;overflow:hidden;position:relative;background:#f5f5f5;flex-shrink:0;transition:all .2s}
+.np-thumb-item:hover{border-color:#90caf9}
+.np-thumb-item.active{border-color:#1565c0;box-shadow:0 0 0 2px rgba(21,101,192,.2)}
+.np-thumb-item img{width:100%;height:100%;object-fit:cover}
+.np-thumb-label{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:9px;text-align:center;padding:2px 0}
+.np-thumb-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ccc;font-size:10px}
+
+/* 右侧配置区 */
+.np-h5-right{flex:1;min-width:0}
+.np-config-section{margin-bottom:24px}
+.np-config-title{font-size:15px;font-weight:700;color:#333;margin-bottom:12px}
+.np-config-subtitle{font-size:13px;color:#888;margin-bottom:8px}
+
+/* 图片上传块 */
+.np-img-upload{width:120px;height:120px;border:2px dashed #d0d0d0;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;background:#fafafa;position:relative;overflow:hidden}
+.np-img-upload:hover{border-color:#1565c0;background:#f0f7ff}
+.np-img-upload img{width:100%;height:100%;object-fit:cover;border-radius:6px}
+.np-img-upload .del-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;opacity:0;transition:opacity .2s}
+.np-img-upload:hover .del-btn{opacity:1}
+.np-img-upload-text{font-size:11px;color:#999;text-align:center;line-height:1.4}
+.np-img-hint{font-size:11px;color:#ff5252;margin-top:4px}
+
+/* 配置行 */
+.np-field-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.np-field-label{font-size:14px;font-weight:600;color:#333;min-width:70px;flex-shrink:0}
+.np-field-label .req{color:#ff5252;margin-right:2px}
+.np-field-input{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;transition:all .2s;flex:1;min-width:200px;max-width:400px;font-family:inherit}
+.np-field-input:focus{border-color:#1565c0;box-shadow:0 0 0 2px rgba(21,101,192,.1)}
+.np-field-textarea{padding:8px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;outline:none;transition:all .2s;flex:1;min-width:200px;max-width:500px;font-family:inherit;resize:vertical}
+.np-field-textarea:focus{border-color:#1565c0;box-shadow:0 0 0 2px rgba(21,101,192,.1)}
+.np-char-count{font-size:11px;color:#999;margin-left:4px}
+.np-color-dot{width:24px;height:24px;border-radius:50%;border:1px solid #e0e0e0;cursor:pointer;display:inline-block}
+.np-toggle{position:relative;width:40px;height:22px;background:#ccc;border-radius:11px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.np-toggle.on{background:#1565c0}
+.np-toggle::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.np-toggle.on::after{left:20px}
+.np-checkbox{width:18px;height:18px;accent-color:#1565c0;cursor:pointer}
+
+/* 物料表格 */
+.np-material-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.np-material-table th{background:#f5f7fa;padding:10px 12px;text-align:left;font-weight:600;color:#666;border-bottom:2px solid #e8e8e8;font-size:11px}
+.np-material-table td{padding:10px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+.np-material-table tr:hover{background:#f8faff}
+.np-material-img{width:48px;height:48px;border-radius:6px;border:1px solid #e0e0e0;overflow:hidden;cursor:pointer;position:relative;background:#f5f5f5;display:flex;align-items:center;justify-content:center}
+.np-material-img img{width:100%;height:100%;object-fit:cover}
+.np-material-img .del-btn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;opacity:0;transition:opacity .2s}
+.np-material-img:hover .del-btn{opacity:1}
+
+/* 音乐选择 */
+.np-music-section{margin-top:16px}
+.np-music-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.np-music-radio{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.np-music-list{margin-top:8px}
+.np-music-item{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #f5f5f5}
+.np-music-item label{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;flex:1}
+.np-music-play{width:28px;height:28px;border-radius:50%;border:1px solid #1565c0;color:#1565c0;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;flex-shrink:0}
+
+/* 尺码导入 */
+.np-size-btns{display:flex;gap:8px;margin-top:8px}
+.np-size-btn{padding:6px 16px;border-radius:6px;font-size:12px;cursor:pointer;border:1px solid #e0e0e0;background:#fff;display:flex;align-items:center;gap:4px;transition:all .2s}
+.np-size-btn:hover{border-color:#1565c0;color:#1565c0}
+.np-size-btn-primary{border-color:#1565c0;color:#1565c0;background:#f0f7ff}
+
+/* 底部按钮栏 */
+.np-footer{display:flex;align-items:center;gap:12px;padding:20px 0;border-top:1px solid #f0f0f0;margin-top:32px;position:sticky;bottom:0;background:var(--bg);z-index:10}
+.np-footer .btn{padding:10px 28px;font-size:14px;font-weight:600}
 </style>
 </head>
 <body>
@@ -233,6 +360,7 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
   <div class="sidebar-title">文化衫数据管理</div>
 </div>
 <div class="sidebar-menu">
+  <div class="menu-item" onclick="goMenu('projMgr')" data-p="projMgr"><span class="icon">👕</span><span>文化衫项目管理</span></div>
   <div class="menu-item active" onclick="goMenu('admin')" data-p="admin"><span class="icon">📊</span><span>管理员看板</span></div>
   <div class="menu-item" onclick="goMenu('dept')" data-p="dept"><span class="icon">🏢</span><span>部门看板</span></div>
   <div class="menu-item" onclick="goMenu('receiver')" data-p="receiver"><span class="icon">📦</span><span>收货人看板</span></div>
@@ -323,6 +451,77 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
 <div class="modal modal-fullscreen">
   <div class="modal-hd"><div class="modal-tt" id="data-view-title">数据查看</div><button class="modal-cl" onclick="closeM('modal-data-view')">✕</button></div>
   <div class="modal-bd" id="data-view-body"></div>
+</div>
+</div>
+
+<!-- 新建项目已改为大页面模式，不再使用弹窗 -->
+
+<!-- ===== 弹窗：编辑项目设置 ===== -->
+<div class="modal-ov" id="modal-edit-proj">
+<div class="modal" style="max-width:600px">
+  <div class="modal-hd"><div class="modal-tt">项目设置</div><button class="modal-cl" onclick="closeM('modal-edit-proj')">✕</button></div>
+  <div class="modal-bd">
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span>项目名称</label>
+      <input class="fctl" id="ep-title">
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span>预期数量</label>
+      <input class="fctl" id="ep-quantity" type="number">
+    </div>
+    <div class="frow">
+      <label class="flbl">活动开始时间</label>
+      <input class="fctl" id="ep-start" type="datetime-local">
+    </div>
+    <div class="frow">
+      <label class="flbl">活动截止时间</label>
+      <input class="fctl" id="ep-deadline" type="datetime-local">
+    </div>
+    <div class="frow">
+      <label class="flbl">项目状态</label>
+      <select class="fctl" id="ep-status">
+        <option value="active">进行中</option>
+        <option value="inactive">已结束</option>
+      </select>
+    </div>
+  </div>
+  <div class="modal-ft">
+    <button class="btn btn-outline" onclick="closeM('modal-edit-proj')">取消</button>
+    <button class="btn btn-dark" onclick="saveEditProj()">保存</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== 弹窗：项目权限设置 ===== -->
+<div class="modal-ov" id="modal-proj-perm">
+<div class="modal" style="max-width:520px">
+  <div class="modal-hd"><div class="modal-tt" id="proj-perm-title">权限设置</div><button class="modal-cl" onclick="closeM('modal-proj-perm')">✕</button></div>
+  <div class="modal-bd">
+    <p style="font-size:13px;color:#888;margin-bottom:16px">（手动添加企业微信名）</p>
+    <div class="perm-list" id="proj-perm-list-body"></div>
+    <div class="perm-add-row">
+      <input class="perm-add-input" id="proj-perm-add-input" placeholder="输入企业微信名">
+      <button class="btn btn-primary" onclick="addProjPermUser()">添加</button>
+    </div>
+  </div>
+  <div class="modal-ft">
+    <button class="btn btn-outline" onclick="closeM('modal-proj-perm')">取消</button>
+    <button class="btn btn-dark" onclick="saveProjPerm()">确定</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== 弹窗：删除确认 ===== -->
+<div class="modal-ov" id="modal-delete-confirm">
+<div class="modal" style="max-width:380px">
+  <div class="modal-hd"><div class="modal-tt">确认删除</div><button class="modal-cl" onclick="closeM('modal-delete-confirm')">✕</button></div>
+  <div class="modal-bd" style="text-align:center;padding:30px 28px">
+    <div style="font-size:16px;color:#333" id="delete-confirm-text">是否确认删除XXXXXX</div>
+  </div>
+  <div class="modal-ft" style="justify-content:center;gap:24px">
+    <button class="btn btn-primary" onclick="confirmDeleteProj()" style="min-width:80px">是</button>
+    <button class="btn btn-outline" onclick="closeM('modal-delete-confirm')" style="min-width:80px">否</button>
+  </div>
 </div>
 </div>
 

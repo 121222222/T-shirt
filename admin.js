@@ -120,9 +120,1020 @@ function renderPagination(total,page,onChange){
 // ========== 主渲染 ==========
 function render(){
   const c=g('content');
-  if(curMenu==='admin') renderAdmin(c);
+  if(curMenu==='newProj') renderNewProject();
+  else if(curMenu==='projMgr') renderProjMgr(c);
+  else if(curMenu==='admin') renderAdmin(c);
   else if(curMenu==='dept') renderDept(c);
   else if(curMenu==='receiver') renderReceiver(c);
+}
+
+// ===============================================================
+// ========== 1. 文化衫项目管理 ==========
+// ===============================================================
+let projMgrTab = 'ongoing'; // ongoing | staged | expired
+let projMgrPage = 1;
+let npStep = 1; // 新建项目当前步骤
+let npPermUsers = []; // 新建项目-权限用户列表
+let npImgData = ''; // 新建项目-上传的图片base64
+let editProjId = ''; // 当前编辑项目ID
+let editProjPermId = ''; // 当前权限设置项目ID
+let deleteProjId = ''; // 待删除项目ID
+
+function renderProjMgr(c){
+  const projs=ls(SK.proj);
+  // 按tab筛选
+  const now=new Date();
+  let filtered=projs;
+  if(projMgrTab==='ongoing'){
+    filtered=projs.filter(p=>p.status==='active');
+  }else if(projMgrTab==='staged'){
+    filtered=projs.filter(p=>p.status==='inactive'&&p.deadline&&new Date(p.deadline)>=now);
+  }else if(projMgrTab==='expired'){
+    filtered=projs.filter(p=>p.status==='inactive'&&(!p.deadline||new Date(p.deadline)<now));
+  }
+
+  // 筛选条件
+  const fTitle=g('pm-f-title');
+  const fStatus=g('pm-f-status');
+  if(fTitle&&fTitle.value) filtered=filtered.filter(p=>p.title.includes(fTitle.value));
+  if(fStatus&&fStatus.value) filtered=filtered.filter(p=>p.status===fStatus.value);
+
+  c.innerHTML=`
+  <div class="proj-mgr-header">
+    <div class="page-title" style="margin-bottom:0;color:var(--teal)">📋 文化衫项目管理</div>
+  </div>
+
+  <div class="top-tabs">
+    <button class="top-tab ${projMgrTab==='ongoing'?'active':''}" onclick="switchProjMgrTab('ongoing')">正期活动</button>
+    <button class="top-tab ${projMgrTab==='staged'?'active':''}" onclick="switchProjMgrTab('staged')">阶段活动</button>
+    <button class="top-tab ${projMgrTab==='expired'?'active':''}" onclick="switchProjMgrTab('expired')">过期活动</button>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-item"><span class="filter-label">项目标题</span><input class="filter-input" id="pm-f-title" placeholder="项目标题搜索" oninput="render()"></div>
+    <div class="filter-item"><span class="filter-label">状态</span>
+      <select class="filter-select" id="pm-f-status" onchange="render()"><option value="">全部</option><option value="active">进行中</option><option value="inactive">已结束</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="render()">筛选</button>
+    <button class="btn btn-outline" onclick="resetProjMgrFilters()">重置</button>
+    <div style="flex:1"></div>
+    <button class="dl-template" onclick="showMsg('下载模板功能演示中','i')">⬇ 下载模板</button>
+  </div>
+
+  <div style="margin-bottom:16px">
+    <button class="proj-mgr-title-btn" onclick="openNewProject()">新建项目</button>
+  </div>
+
+  <div class="card">
+    <div class="card-bd-np">
+      <table class="dtable">
+        <thead><tr>
+          <th>序号</th><th>任务ID</th><th>标题</th><th>活动时间</th><th>状态</th><th>操作</th>
+        </tr></thead>
+        <tbody id="pm-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="pm-pagination"></div>`;
+
+  renderProjMgrTable(filtered);
+}
+
+function switchProjMgrTab(tab){
+  projMgrTab=tab;
+  projMgrPage=1;
+  render();
+}
+
+function resetProjMgrFilters(){
+  const ft=g('pm-f-title'),fs=g('pm-f-status');
+  if(ft) ft.value='';
+  if(fs) fs.value='';
+  projMgrPage=1;
+  render();
+}
+
+function renderProjMgrTable(projs){
+  const start=(projMgrPage-1)*PAGE_SIZE;
+  const page=projs.slice(start,start+PAGE_SIZE);
+  const tb=g('pm-table-body');
+  if(!tb)return;
+  tb.innerHTML=page.map((p,i)=>`<tr>
+    <td>${start+i+1}</td>
+    <td>${p.projId||'-'}</td>
+    <td>${p.title}</td>
+    <td>${fmtDateRange(p.start,p.deadline)}</td>
+    <td><span class="tag ${p.status==='active'?'tag-green':'tag-red'}">${p.status==='active'?'进行中':'已结束'}</span></td>
+    <td>
+      <button class="action-link action-link-green" onclick="openEditProj('${p.id}')">项目设置</button>
+      <button class="action-link action-link-orange" onclick="openProjPerm('${p.id}')">权限设置</button>
+      <button class="action-link action-link-red" onclick="openDeleteProj('${p.id}')">删除项目</button>
+    </td>
+  </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>';
+
+  const pagEl=g('pm-pagination');
+  if(pagEl) pagEl.innerHTML=renderPagination(projs.length,projMgrPage,'goProjMgrPage');
+}
+
+function goProjMgrPage(p){projMgrPage=p;render();}
+
+// ========== 1.1 新建项目（大页面流程） ==========
+// 新建项目数据模型
+let npData = {
+  h5Title:'', h5Subtitle:'', h5ShareImg:'',
+  pages:[], // 13个页面的配置数据
+  materials:[], // 物料列表
+  sizes:[], // 尺码列表
+  configData:{} // 第三步配置数据
+};
+let npCurPage = 0; // 当前选中的H5页面索引(0-12)
+
+// 13个H5页面定义
+const H5_PAGES = [
+  {id:'p1', name:'首页', desc:'背景图片设置'},
+  {id:'p2', name:'首页-2', desc:'替换背景图片'},
+  {id:'p3', name:'温馨提示', desc:'替换背景色+文字'},
+  {id:'p4', name:'温馨提示-2', desc:'替换图片+文字'},
+  {id:'p5', name:'截止提醒', desc:'替换背景色+文字'},
+  {id:'p6', name:'选择款式', desc:'物料配置+标题'},
+  {id:'p7', name:'选择尺码', desc:'尺码导入+标题'},
+  {id:'p8', name:'选择地址', desc:'地址+备注+注意事项'},
+  {id:'p9', name:'选款确认', desc:'信息配置'},
+  {id:'p10', name:'选款确认-2', desc:'已到期状态'},
+  {id:'p11', name:'分享页', desc:'主背景+图片+logo+文字'},
+  {id:'p12', name:'结束页', desc:'替换背景色+文字'},
+  {id:'p13', name:'白名单页', desc:'访问权限+背景图+文字'}
+];
+
+function initNpData(){
+  npData = {
+    h5Title:'', h5Subtitle:'', h5ShareImg:'',
+    pages: H5_PAGES.map(()=>({
+      bgImg:'', bgColor:'#000000',
+      loadingImg:'', loadingHide:false,
+      logoImg:'', logoHide:true,
+      percentColor:'#ffffff',
+      texts:[], images:[], toggles:{},
+      musicSource:'library', musicChoice:'',
+      accessControl:false,
+      hidePage:false
+    })),
+    materials:[
+      {img:'',name:'男款-军绿色',btnText:'查看详情',btnTextColor:true,btnColor:'#000',detailImg:''},
+      {img:'',name:'男款-卡其色',btnText:'查看详情',btnTextColor:true,btnColor:'#000',detailImg:''},
+      {img:'',name:'女款-棕色',btnText:'查看详情',btnTextColor:true,btnColor:'#000',detailImg:''},
+      {img:'',name:'女款-浅卡其色',btnText:'查看详情',btnTextColor:true,btnColor:'#000',detailImg:''}
+    ],
+    sizes:[],
+    configData:{}
+  };
+  npCurPage = 0;
+}
+
+function openNewProject(){
+  npStep=1;
+  npPermUsers=[];
+  npImgData='';
+  initNpData();
+  curMenu='newProj';
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  renderNewProject();
+}
+
+function renderNewProject(){
+  const c=g('content');
+  let stepsHtml=`<div class="np-steps">`;
+  const stepNames=['第一步：标题设置','第二步：制作H5','第三步：配置数据'];
+  stepNames.forEach((name,i)=>{
+    const stepNum=i+1;
+    const cls=stepNum===npStep?'active':(stepNum<npStep?'done':'');
+    stepsHtml+=`<div class="np-step-item ${cls}" onclick="npGoStep(${stepNum})">
+      <span class="np-step-num">${stepNum<npStep?'✓':('0'+stepNum)}</span>
+      <span>${name}</span>
+    </div>`;
+    if(i<2) stepsHtml+=`<span class="np-step-arrow">›</span>`;
+  });
+  stepsHtml+=`</div>`;
+
+  let bodyHtml='';
+  if(npStep===1) bodyHtml=renderNpStep1();
+  else if(npStep===2) bodyHtml=renderNpStep2();
+  else if(npStep===3) bodyHtml=renderNpStep3();
+
+  const headerTitle = npStep===1?'新建项目':'制作步骤';
+  c.innerHTML=`<div class="np-page">
+    <div class="np-page-header">
+      <div class="np-page-title">${headerTitle} <span class="info-icon" title="帮助">ⓘ</span></div>
+      <div class="np-header-btns">
+        ${npStep>=2?'<button class="btn btn-outline" onclick="showMsg(\'模板素材包下载中\',\'i\')">模板素材包</button>':''}
+        ${npStep>=2?'<button class="btn btn-primary" onclick="npPreviewH5()">预览H5</button>':''}
+      </div>
+    </div>
+    ${stepsHtml}
+    ${bodyHtml}
+    <div class="np-footer">
+      ${npStep>1?'<button class="btn btn-outline" onclick="npPrevStep()">上一步</button>':''}
+      <button class="btn" style="background:#1565c0;color:#fff" onclick="npSaveProject()">保存</button>
+      ${npStep<3?'<button class="btn btn-outline" onclick="npNextStep()">下一步</button>':''}
+    </div>
+  </div>`;
+}
+
+// ===== 第一步：标题设置 =====
+function renderNpStep1(){
+  return `<div style="max-width:600px">
+    <div class="np-config-section">
+      <div class="np-field-row">
+        <label class="np-field-label"><span class="req">*</span> H5主标题</label>
+        <input class="np-field-input" id="np-h5-title" value="${npData.h5Title}" placeholder="最多可以输入12位" maxlength="12" oninput="npData.h5Title=this.value">
+      </div>
+      <div class="np-field-row">
+        <label class="np-field-label"><span class="req">*</span> H5副标题</label>
+        <input class="np-field-input" id="np-h5-subtitle" value="${npData.h5Subtitle}" placeholder="最多可以输入21位" maxlength="21" oninput="npData.h5Subtitle=this.value">
+      </div>
+      <div class="np-field-row" style="align-items:flex-start">
+        <label class="np-field-label"><span class="req">*</span> H5转发图片</label>
+        <div>
+          <div class="np-img-upload" id="np-share-upload" onclick="document.getElementById('np-share-file').click()">
+            ${npData.h5ShareImg?`<img src="${npData.h5ShareImg}"><div class="del-btn" onclick="event.stopPropagation();npData.h5ShareImg='';renderNewProject()">🗑</div>`:'<div style="font-size:24px;color:#ccc">☁</div><div class="np-img-upload-text">点击上传或拖拽文件到框</div>'}
+          </div>
+          <input type="file" id="np-share-file" accept="image/*" style="display:none" onchange="npUploadShareImg(this)">
+          <div class="np-img-hint">尺寸：100*100PX　格式：png/jpg 且不超过2M</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function npUploadShareImg(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{npData.h5ShareImg=e.target.result;renderNewProject();};
+  reader.readAsDataURL(file);
+}
+
+// ===== 第二步：制作H5（左侧手机预览+右侧配置） =====
+function renderNpStep2(){
+  // 构建缩略图列表
+  let thumbs='';
+  thumbs+=`<div class="np-thumb-nav" onclick="npScrollThumb(-1)">∧</div>`;
+  H5_PAGES.forEach((pg,i)=>{
+    thumbs+=`<div class="np-thumb-item ${i===npCurPage?'active':''}" onclick="npSelectPage(${i})">
+      <div class="np-thumb-placeholder" style="font-size:9px;padding:2px">${pg.name}</div>
+      <div class="np-thumb-label">${i+1}/13</div>
+    </div>`;
+  });
+  thumbs+=`<div class="np-thumb-nav" onclick="npScrollThumb(1)">∨</div>`;
+
+  // 手机预览内容
+  let phoneContent = renderPhonePreview(npCurPage);
+
+  // 右侧配置
+  let configHtml = renderPageConfig(npCurPage);
+
+  return `<div class="np-h5-layout">
+    <div class="np-h5-left">
+      <div class="np-phone-wrap">
+        <div class="np-phone">
+          <div class="np-phone-status">
+            <span>1:20 PM</span>
+            <span>⫛ ▶ 📶 🔋</span>
+          </div>
+          <div class="np-phone-nav">
+            <span style="cursor:pointer">‹</span>
+            <span>${npData.h5Title||'项目标题'}</span>
+            <span>•••</span>
+          </div>
+          <div class="np-phone-body" id="np-phone-body">
+            ${phoneContent}
+          </div>
+        </div>
+      </div>
+      <div class="np-thumb-list" id="np-thumb-list">
+        ${thumbs}
+      </div>
+    </div>
+    <div class="np-h5-right">
+      ${configHtml}
+    </div>
+  </div>`;
+}
+
+function npSelectPage(idx){
+  npCurPage=idx;
+  renderNewProject();
+}
+
+function npScrollThumb(dir){
+  const el=g('np-thumb-list');
+  if(el) el.scrollBy({top:dir*120,behavior:'smooth'});
+}
+
+// 手机预览内容（根据当前页面）
+function renderPhonePreview(pageIdx){
+  const pg = H5_PAGES[pageIdx];
+  const pd = npData.pages[pageIdx];
+  // 根据不同页面类型渲染不同预览
+  const previewMap = {
+    0:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e,#0d47a1)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center">
+      <div style="font-size:20px;font-weight:700">${npData.h5Title||'项目标题'}</div>
+      <div style="font-size:12px;margin-top:8px;opacity:.8">${npData.h5Subtitle||'副标题'}</div>
+      ${pd.loadingHide?'':`<div style="margin-top:40px;font-size:11px;opacity:.6">100%</div>`}
+    </div>`,
+    1:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e 0%,#283593 50%,#1565c0 100%)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center">
+      <div style="font-size:18px;font-weight:700">${npData.h5Title||'项目标题'}</div>
+      <div style="margin-top:20px;padding:12px 24px;background:rgba(255,255,255,.2);border-radius:24px;font-size:13px">选择款式及尺码</div>
+    </div>`,
+    2:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:16px;font-weight:700;color:#ff9800">温馨提示</div>
+      <div style="font-size:12px;margin-top:16px;line-height:1.8;opacity:.9">本次文化衫填写截止2025年9月23日18:00，<br>期间每个同学填写次数不限，后台以大家最后一次成功提交数据为准。</div>
+      <div style="margin-top:24px;padding:10px 32px;background:#333;border-radius:24px;font-size:13px">我知道了</div>
+    </div>`,
+    3:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e,#283593)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:16px;font-weight:700;color:#ff9800">温馨提示</div>
+      <div style="font-size:11px;margin-top:16px;line-height:1.8">本次文化衫填写截止...</div>
+      <div style="margin-top:24px;padding:10px 32px;background:#333;border-radius:24px;font-size:13px">我知道了</div>
+    </div>`,
+    4:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:14px;line-height:1.8">本次选款选码截止至2025年9月23日18:00，<br>逾期将无法修改。</div>
+      <div style="margin-top:24px;padding:10px 32px;background:#fff;color:#000;border-radius:24px;font-size:13px">我知道了</div>
+    </div>`,
+    5:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px">Step1：选择款式</div>
+      <div style="font-size:11px;color:#666;margin-top:4px">经典哈灵顿领夹克，分男、女款式</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px;text-align:center"><div style="height:60px;background:#e0e0e0;border-radius:4px;margin-bottom:4px"></div><div style="font-size:10px">男款-军绿色</div></div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px;text-align:center"><div style="height:60px;background:#e0e0e0;border-radius:4px;margin-bottom:4px"></div><div style="font-size:10px">男款-卡其色</div></div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px;text-align:center"><div style="height:60px;background:#e0e0e0;border-radius:4px;margin-bottom:4px"></div><div style="font-size:10px">女款-棕色</div></div>
+        <div style="background:#f5f5f5;border-radius:8px;padding:8px;text-align:center"><div style="height:60px;background:#e0e0e0;border-radius:4px;margin-bottom:4px"></div><div style="font-size:10px">女款-浅卡其色</div></div>
+      </div>
+      <div style="margin-top:16px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">确定款式</div>
+    </div>`,
+    6:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px">Step2：选择尺码</div>
+      <div style="font-size:11px;color:#1565c0;margin-top:4px">已选择：周年T恤-白色</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
+        ${['XS','S','M','L','XL','XXL','3XL','4XL','5XL'].map(s=>`<div style="width:40px;height:36px;border:1px solid #e0e0e0;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;${s==='XL'?'background:#1565c0;color:#fff;border-color:#1565c0':''}">${s}</div>`).join('')}
+      </div>
+      <div style="margin-top:20px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">确定尺码</div>
+    </div>`,
+    7:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px">Step3：选择地址</div>
+      <div style="margin-top:12px;font-size:12px"><b>办公地点：</b><span style="color:#999">选择地址 ▾</span></div>
+      <div style="font-size:10px;color:#999;margin-top:4px">请勾选办公地点所在城市和大厦</div>
+      <div style="margin-top:16px"><b style="font-size:12px">备注</b><textarea style="width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:6px;font-size:11px;margin-top:4px;resize:none" rows="2" readonly>如果没有找到您所在地区...</textarea></div>
+      <div style="margin-top:12px"><b style="font-size:12px">注意事项</b><div style="font-size:10px;color:#666;margin-top:4px;line-height:1.6">文化衫选款选码截止至...</div></div>
+      <div style="margin-top:16px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">提交本次选码结果</div>
+    </div>`,
+    8:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px">Step4：选款选码确认</div>
+      <div style="font-size:11px;color:#666;margin-top:4px">在9月23日18:00前，请务必核对...</div>
+      <div style="background:#fff;border-radius:8px;margin-top:12px;padding:12px;text-align:center">
+        <div style="height:80px;background:#e0e0e0;border-radius:6px;margin-bottom:8px"></div>
+        <div style="font-size:10px;color:#666">头像 / 尺寸 / 微信昵称 / 地址</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="flex:1;padding:8px;background:#fff;border-radius:8px;text-align:center;font-size:11px;color:#1565c0">生成分享图</div>
+        <div style="flex:1;padding:8px;background:#333;color:#fff;border-radius:8px;text-align:center;font-size:11px">重新选择</div>
+      </div>
+    </div>`,
+    9:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
+      <div style="font-weight:700;font-size:14px">Step4：选款选码确认</div>
+      <div style="font-size:11px;color:#666;margin-top:4px">已到期状态</div>
+      <div style="background:#fff;border-radius:8px;margin-top:12px;padding:12px;text-align:center">
+        <div style="height:80px;background:#e0e0e0;border-radius:6px;margin-bottom:8px"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <div style="flex:1;padding:8px;background:#fff;border-radius:8px;text-align:center;font-size:11px;color:#1565c0">生成分享图</div>
+        <div style="flex:1;padding:8px;background:#ddd;color:#999;border-radius:8px;text-align:center;font-size:11px">已到期，不可修改</div>
+      </div>
+    </div>`,
+    10:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#2e7d32,#4caf50)'};display:flex;flex-direction:column;justify-content:space-between;padding:20px;color:#fff">
+      <div style="font-size:11px;text-align:center">13th ANNIVERSARY</div>
+      <div style="text-align:center">
+        <div style="height:100px;background:rgba(255,255,255,.1);border-radius:8px;margin-bottom:12px"></div>
+        <div style="font-size:16px;font-weight:700">Harrington<br>Leisure Jacket</div>
+        <div style="font-size:10px;margin-top:12px;opacity:.8">#WE ARE TEG# 我是第xxxx位拥有2025TEG13周年冬季文化衫的同学~</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:10px;opacity:.6">长按保存图片</div>
+        <div style="margin-top:8px;padding:8px 20px;background:rgba(255,255,255,.2);border-radius:20px;font-size:12px">返回上一页</div>
+      </div>
+    </div>`,
+    11:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:16px;font-weight:700">选款选码已结束</div>
+      <div style="font-size:11px;margin-top:16px;line-height:1.8;opacity:.8">本次文化衫已在2025年9月23日18:00截止选款选码...</div>
+    </div>`,
+    12:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#ff8a00,#e52e71)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:13px;line-height:1.8">亲，你不在本次活动内<br>如对本次文化衫有任何建议反馈<br>可以企业微信：他二哥<br>感谢大家的支持与理解！</div>
+    </div>`
+  };
+  return (previewMap[pageIdx]||previewMap[0])();
+}
+
+// 页面配置渲染（根据页面索引）
+function renderPageConfig(pageIdx){
+  const pd = npData.pages[pageIdx];
+  const pg = H5_PAGES[pageIdx];
+
+  // 通用图片上传块
+  const imgBlock=(id,label,hint,val,field)=>`
+    <div class="np-config-section">
+      <div class="np-config-title">${label}</div>
+      <div class="np-img-upload" onclick="document.getElementById('${id}').click()">
+        ${val?`<img src="${val}"><div class="del-btn" onclick="event.stopPropagation();npData.pages[${pageIdx}].${field}='';renderNewProject()">🗑</div>`:'<div style="font-size:20px;color:#ccc">🗑</div>'}
+      </div>
+      <input type="file" id="${id}" accept="image/*" style="display:none" onchange="npPageImgUpload(this,${pageIdx},'${field}')">
+      <div class="np-img-hint">${hint}</div>
+    </div>`;
+
+  // 通用替换文字块
+  const textBlock=(label,val,maxLen,field,showTextColor=false,showBtnColor=false)=>`
+    <div class="np-field-row">
+      <label class="np-field-label">替换文字</label>
+      <input class="np-field-input" value="${val||''}" maxlength="${maxLen}" placeholder="${label}" oninput="npPageTextChange(${pageIdx},'${field}',this.value)">
+      <span class="np-char-count">${(val||'').length}/${maxLen}</span>
+      ${showTextColor?`<span style="font-size:12px">文本颜色</span> <input type="checkbox" class="np-checkbox" ${pd.toggles[field+'_textColor']?'checked':''} onchange="npData.pages[${pageIdx}].toggles['${field}_textColor']=this.checked"> <input type="color" class="np-color-dot" value="${pd.toggles[field+'_color']||'#000000'}" onchange="npData.pages[${pageIdx}].toggles['${field}_color']=this.value">`:''}
+      ${showBtnColor?`<span style="font-size:12px">按钮颜色</span> <input type="checkbox" class="np-checkbox" ${pd.toggles[field+'_btnColor']?'checked':''} onchange="npData.pages[${pageIdx}].toggles['${field}_btnColor']=this.checked"> <input type="color" class="np-color-dot" value="${pd.toggles[field+'_btnColorVal']||'#000000'}" onchange="npData.pages[${pageIdx}].toggles['${field}_btnColorVal']=this.value">`:''}
+    </div>`;
+
+  // 音乐区块
+  const musicBlock=()=>`
+    <div class="np-music-section">
+      <div class="np-music-row">
+        <span style="font-size:14px;font-weight:600">音乐来源</span>
+        <label class="np-music-radio"><input type="radio" name="np-music-${pageIdx}" value="library" ${pd.musicSource!=='local'?'checked':''} onchange="npData.pages[${pageIdx}].musicSource='library'"> 音乐库</label>
+        <label class="np-music-radio"><input type="radio" name="np-music-${pageIdx}" value="local" ${pd.musicSource==='local'?'checked':''} onchange="npData.pages[${pageIdx}].musicSource='local'"> 本地音乐</label>
+      </div>
+      <div class="np-config-subtitle">选择音乐</div>
+      <div class="np-music-list">
+        ${['抽奖bgm','拾光胶囊','人平周年庆','答题bgm'].map(m=>`
+          <div class="np-music-item">
+            <label><input type="radio" name="np-music-choice-${pageIdx}" value="${m}" ${pd.musicChoice===m?'checked':''} onchange="npData.pages[${pageIdx}].musicChoice='${m}'"> ${m}</label>
+            <div class="np-music-play" onclick="showMsg('播放${m}','i')">▶</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+
+  // 隐藏/显示toggle
+  const toggleLine=(label,field)=>`<div class="np-field-row"><span style="font-size:14px;font-weight:600">${label}</span> <span style="font-size:12px;color:#999;margin-left:4px">隐藏</span> <div class="np-toggle ${pd.toggles[field]?'on':''}" onclick="npData.pages[${pageIdx}].toggles['${field}']=!npData.pages[${pageIdx}].toggles['${field}'];renderNewProject()"></div></div>`;
+
+  // 按页面类型返回不同配置
+  switch(pageIdx){
+    case 0: // 首页 - 背景图片+loading配置+百分比文字颜色+logo/主题
+      return `
+        ${imgBlock('np-p1-bg','背景图片设置','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        ${toggleLine('loading配置','loadingHide')}
+        ${imgBlock('np-p1-loading','','尺寸：200*200PX　格式：gif/png/jpg 且不超过2M',pd.loadingImg,'loadingImg')}
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">百分比文字颜色</span> <input type="color" class="np-color-dot" value="${pd.percentColor||'#ffffff'}" onchange="npData.pages[${pageIdx}].percentColor=this.value"></div>
+        ${toggleLine('logo/主题','logoHide')}
+        ${imgBlock('np-p1-logo','','尺寸：190*100PX　格式：png/jpg 且不超过2M',pd.logoImg,'logoImg')}`;
+
+    case 1: // 首页-2 - 替换背景图片+替换图片+替换文字+音乐
+      return `
+        ${imgBlock('np-p2-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        ${toggleLine('替换图片','img1Hide')}
+        ${imgBlock('np-p2-img1','','尺寸：415*240PX　格式：png/jpg 且不超过2M',pd.images[0]||'','images_0')}
+        ${textBlock('替换文字',pd.texts[0]||'',16,'text0',true,true)}
+        ${textBlock('替换文字',pd.texts[1]||'',10,'text1',true,true)}
+        ${musicBlock()}`;
+
+    case 2: // 温馨提示 - 替换背景色+替换文字
+      return `
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">替换背景色</span> <span style="font-size:12px;margin-left:8px">背景颜色</span> <input type="color" class="np-color-dot" value="${pd.bgColor||'#000000'}" onchange="npData.pages[${pageIdx}].bgColor=this.value"></div>
+        ${textBlock('温馨提示',pd.texts[0]||'温馨提示',20,'text0',false,false)}
+        <div class="np-field-row">
+          <label class="np-field-label">替换文字</label>
+          <textarea class="np-field-textarea" rows="3" maxlength="80" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
+          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+        </div>
+        ${textBlock('我知道了',pd.texts[2]||'我知道了',10,'text2',true,true)}
+        ${musicBlock()}`;
+
+    case 3: // 温馨提示-2 - 替换背景图片+替换图片+文字+音乐
+      return `
+        ${imgBlock('np-p4-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        ${imgBlock('np-p4-img1','替换图片','尺寸：750*高度不限制　格式：png/jpg 且不超过2M',pd.images[0]||'','images_0')}
+        ${textBlock('我知道了',pd.texts[0]||'我知道了',10,'text0',true,true)}
+        ${musicBlock()}`;
+
+    case 4: // 截止提醒 - 替换背景色+替换文字
+      return `
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">替换背景色</span> <span style="font-size:12px;margin-left:8px">背景颜色</span> <input type="color" class="np-color-dot" value="${pd.bgColor||'#000000'}" onchange="npData.pages[${pageIdx}].bgColor=this.value"></div>
+        ${textBlock('选款选码已结束',pd.texts[0]||'',20,'text0',false,true)}
+        <div class="np-field-row">
+          <label class="np-field-label">替换文字</label>
+          <textarea class="np-field-textarea" rows="3" maxlength="80" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
+          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+        </div>
+        ${textBlock('我知道了',pd.texts[2]||'我知道了',10,'text2',true,true)}
+        ${musicBlock()}`;
+
+    case 5: // 选择款式 - 替换背景图片+标题配置+物料表格
+      return `
+        ${imgBlock('np-p6-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        <div class="np-config-section">
+          <div class="np-config-title">标题配置</div>
+          <div class="np-field-row">
+            <label class="np-field-label">主文案</label>
+            <input class="np-field-input" value="${pd.texts[0]||'Step1：选择款式'}" maxlength="30" oninput="npPageTextChange(${pageIdx},'text0',this.value)">
+            <span class="np-char-count">${(pd.texts[0]||'').length}/30</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text0_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text0_color=this.value">
+            <div class="np-toggle ${pd.toggles.text0_toggle?'on':''}" onclick="npData.pages[${pageIdx}].toggles.text0_toggle=!npData.pages[${pageIdx}].toggles.text0_toggle;renderNewProject()"></div>
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">副文案</label>
+            <textarea class="np-field-textarea" rows="2" maxlength="50" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
+            <span class="np-char-count">${(pd.texts[1]||'').length}/50</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+            <div class="np-toggle ${pd.toggles.text1_toggle?'on':''}" onclick="npData.pages[${pageIdx}].toggles.text1_toggle=!npData.pages[${pageIdx}].toggles.text1_toggle;renderNewProject()"></div>
+          </div>
+        </div>
+        ${renderMaterialsTable()}`;
+
+    case 6: // 选择尺码 - 隐藏页面+背景+标题+尺码导入+按钮文字
+      return `
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">隐藏页面</span> <div class="np-toggle ${pd.hidePage?'on':''}" onclick="npData.pages[${pageIdx}].hidePage=!npData.pages[${pageIdx}].hidePage;renderNewProject()"></div></div>
+        <div style="font-size:11px;color:#999;margin-bottom:16px">如果打开隐藏按钮，表示本页面不在H5中呈现。</div>
+        ${imgBlock('np-p7-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        <div class="np-config-section">
+          <div class="np-config-title">标题配置</div>
+          <div class="np-field-row">
+            <label class="np-field-label">主文案</label>
+            <input class="np-field-input" value="${pd.texts[0]||'Step2：选择尺码'}" maxlength="30" oninput="npPageTextChange(${pageIdx},'text0',this.value)">
+            <span class="np-char-count">${(pd.texts[0]||'').length}/30</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text0_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text0_color=this.value">
+            <div class="np-toggle ${pd.toggles.text0_toggle?'on':''}" onclick="npData.pages[${pageIdx}].toggles.text0_toggle=!npData.pages[${pageIdx}].toggles.text0_toggle;renderNewProject()"></div>
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">副文案</label>
+            <textarea class="np-field-textarea" rows="2" maxlength="50" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
+            <span class="np-char-count">${(pd.texts[1]||'').length}/50</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+            <div class="np-toggle ${pd.toggles.text1_toggle?'on':''}" onclick="npData.pages[${pageIdx}].toggles.text1_toggle=!npData.pages[${pageIdx}].toggles.text1_toggle;renderNewProject()"></div>
+          </div>
+          <div class="np-field-row"><span style="font-size:14px;font-weight:600">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.sizeTextColor||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.sizeTextColor=this.value"></div>
+        </div>
+        <div class="np-config-section">
+          <div class="np-config-title"><span class="req">*</span> 导入尺码 <span style="font-size:11px;color:#999;font-weight:400">ⓘ建议尺码库不超过10种</span></div>
+          <div class="np-size-btns">
+            <button class="np-size-btn np-size-btn-primary" onclick="showMsg('批量导入功能演示中','i')">📋 批量导入</button>
+            <button class="np-size-btn" onclick="showMsg('下载模板功能演示中','i')">⬇ 下载模板</button>
+          </div>
+        </div>
+        ${textBlock('确定尺码',pd.texts[2]||'确定尺码',10,'text2',true,true)}`;
+
+    case 7: // 选择地址 - 主文案+副文案+替换文字+备注信息+注意事项配置
+      return `
+        <div class="np-config-section">
+          <div class="np-field-row">
+            <label class="np-field-label">主文案</label>
+            <input class="np-field-input" value="${pd.texts[0]||'Step3：选择地址'}" maxlength="30" oninput="npPageTextChange(${pageIdx},'text0',this.value)">
+            <span class="np-char-count">${(pd.texts[0]||'').length}/30</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text0_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text0_color=this.value">
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">副文案</label>
+            <input class="np-field-input" value="${pd.texts[1]||''}" maxlength="30" oninput="npPageTextChange(${pageIdx},'text1',this.value)">
+            <span class="np-char-count">${(pd.texts[1]||'').length}/30</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+            <div class="np-toggle ${pd.toggles.text1_toggle?'on':''}" onclick="npData.pages[${pageIdx}].toggles.text1_toggle=!npData.pages[${pageIdx}].toggles.text1_toggle;renderNewProject()"></div>
+          </div>
+        </div>
+        <div class="np-config-section">
+          <div class="np-config-title">替换文字</div>
+          <div class="np-field-row">
+            <label class="np-field-label">替换文案</label>
+            <input class="np-field-input" value="${pd.texts[2]||'办公地点'}" maxlength="5" oninput="npPageTextChange(${pageIdx},'text2',this.value)">
+            <span class="np-char-count">${(pd.texts[2]||'').length}/5</span>
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">提示文案</label>
+            <input class="np-field-input" value="${pd.texts[3]||'请勾选办公地点所在城市和大厦'}" maxlength="14" oninput="npPageTextChange(${pageIdx},'text3',this.value)">
+            <span class="np-char-count">${(pd.texts[3]||'').length}/14</span>
+          </div>
+        </div>
+        <div class="np-config-section">
+          <div class="np-config-title">备注信息配置</div>
+          <div class="np-field-row">
+            <label class="np-field-label">替换文案</label>
+            <input class="np-field-input" value="${pd.texts[4]||'备注'}" maxlength="10" oninput="npPageTextChange(${pageIdx},'text4',this.value)">
+            <span class="np-char-count">${(pd.texts[4]||'').length}/10</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text4_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text4_color=this.value">
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">提示文案</label>
+            <textarea class="np-field-textarea" rows="2" maxlength="50" oninput="npPageTextChange(${pageIdx},'text5',this.value)">${pd.texts[5]||'如果没有找到您所在的地区和办公大厦，请在备注栏手动输入，如：深圳 金地威新'}</textarea>
+            <span class="np-char-count">${(pd.texts[5]||'').length}/50</span>
+          </div>
+        </div>
+        <div class="np-config-section">
+          <div class="np-config-title">注意事项配置 <span style="float:right;font-size:12px;color:#999">隐藏</span> <div class="np-toggle ${pd.toggles.noticeHide?'on':''}" onclick="npData.pages[${pageIdx}].toggles.noticeHide=!npData.pages[${pageIdx}].toggles.noticeHide;renderNewProject()" style="display:inline-block;vertical-align:middle;margin-left:4px"></div></div>
+          <div class="np-field-row">
+            <label class="np-field-label">替换文案</label>
+            <input class="np-field-input" value="${pd.texts[6]||'注意事项'}" maxlength="10" oninput="npPageTextChange(${pageIdx},'text6',this.value)">
+            <span class="np-char-count">${(pd.texts[6]||'').length}/10</span>
+            <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text6_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text6_color=this.value">
+          </div>
+          <div class="np-field-row">
+            <label class="np-field-label">提示文案</label>
+            <textarea class="np-field-textarea" rows="2" maxlength="80" oninput="npPageTextChange(${pageIdx},'text7',this.value)">${pd.texts[7]||''}</textarea>
+            <span class="np-char-count">${(pd.texts[7]||'').length}/80</span>
+          </div>
+          ${textBlock('提交本次选码结果',pd.texts[8]||'提交本次选码结果',10,'text8',true,true)}
+        </div>`;
+
+    case 8: // 选款确认 - 主文案+副文案+信息配置+图片+颜色+文字
+      return `
+        <div class="np-field-row">
+          <label class="np-field-label">主文案</label>
+          <input class="np-field-input" value="${pd.texts[0]||'Step4：选款选码确认'}" maxlength="30" oninput="npPageTextChange(${pageIdx},'text0',this.value)">
+        </div>
+        <div class="np-field-row">
+          <label class="np-field-label">副文案</label>
+          <input class="np-field-input" value="${pd.texts[1]||''}" maxlength="50" oninput="npPageTextChange(${pageIdx},'text1',this.value)">
+        </div>
+        <div class="np-config-section">
+          <div class="np-config-title">信息配置</div>
+          <div class="np-field-row" style="align-items:flex-start">
+            <label class="np-field-label">主题背景</label>
+            <div>
+              <div class="np-img-upload" onclick="document.getElementById('np-p9-bg').click()">
+                ${pd.bgImg?`<img src="${pd.bgImg}"><div class="del-btn" onclick="event.stopPropagation();npData.pages[${pageIdx}].bgImg='';renderNewProject()">🗑</div>`:'<div style="font-size:20px;color:#ccc">🗑</div>'}
+              </div>
+              <input type="file" id="np-p9-bg" accept="image/*" style="display:none" onchange="npPageImgUpload(this,${pageIdx},'bgImg')">
+              <div class="np-img-hint">尺寸：582*582PX　格式：png/jpg 且不超过2M</div>
+            </div>
+          </div>
+          <div class="np-field-row"><span style="font-size:14px">线条颜色</span></div>
+          <div class="np-field-row"><span style="font-size:14px">尺寸背景色</span></div>
+        </div>
+        ${textBlock('重新选择',pd.texts[2]||'重新选择',4,'text2',true,true)}
+        ${textBlock('生成分享图',pd.texts[3]||'生成分享图',5,'text3',false,false)}`;
+
+    case 9: // 选款确认-2（已到期）- 文字+音乐
+      return `
+        <div class="np-field-row">
+          <label class="np-field-label">替换文字</label>
+          <input class="np-field-input" value="${pd.texts[0]||'生成分享图'}" maxlength="5" oninput="npPageTextChange(${pageIdx},'text0',this.value)">
+          <span class="np-char-count">${(pd.texts[0]||'').length}/5</span>
+        </div>
+        ${musicBlock()}`;
+
+    case 10: // 分享页 - 主背景图片+替换图片+logo+替换文字
+      return `
+        ${imgBlock('np-p11-bg','替换主背景图片','尺寸：656*1166PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        ${imgBlock('np-p11-img1','替换图片','尺寸：650*930PX　格式：png/jpg 且不超过2M',pd.images[0]||'','images_0')}
+        ${imgBlock('np-p11-logo','替换logo','尺寸：130*130PX　格式：png/jpg 且不超过1M',pd.logoImg,'logoImg')}
+        ${textBlock('#WE ARE TEG# 我是第',pd.texts[0]||'#WE ARE TEG# 我是第',20,'text0',false,false)}`;
+
+    case 11: // 结束页 - 背景色+文字
+      return `
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">替换背景色</span> <span style="font-size:12px;margin-left:8px">背景颜色</span> <input type="color" class="np-color-dot" value="${pd.bgColor||'#000000'}" onchange="npData.pages[${pageIdx}].bgColor=this.value"></div>
+        ${textBlock('选款选码已结束',pd.texts[0]||'',20,'text0',false,true)}
+        <div class="np-field-row">
+          <label class="np-field-label">替换文字</label>
+          <textarea class="np-field-textarea" rows="3" maxlength="80" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
+          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value">
+        </div>
+        ${textBlock('我知道了',pd.texts[2]||'我知道了',6,'text2',true,true)}
+        ${musicBlock()}`;
+
+    case 12: // 白名单页 - 访问权限开关+背景图+文字+音乐
+      return `
+        <div class="np-field-row"><span style="font-size:14px;font-weight:600">访问权限</span> <div class="np-toggle ${pd.accessControl?'on':''}" onclick="npData.pages[${pageIdx}].accessControl=!npData.pages[${pageIdx}].accessControl;renderNewProject()"></div></div>
+        <div style="font-size:11px;color:#999;margin-bottom:16px;line-height:1.6">开启后，只有您导入的名单成员才有权限访问该H5；<br>关闭则默认为全员开放，关闭时本页内容不用编辑。</div>
+        ${imgBlock('np-p13-bg','替换背景图','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        <div class="np-field-row">
+          <label class="np-field-label">替换文字</label>
+          <textarea class="np-field-textarea" rows="3" maxlength="120" oninput="npPageTextChange(${pageIdx},'text0',this.value)">${pd.texts[0]||''}</textarea>
+          <span style="font-size:12px">文字颜色</span> <input type="checkbox" class="np-checkbox" ${pd.toggles.text0_textColor?'checked':''} onchange="npData.pages[${pageIdx}].toggles.text0_textColor=this.checked">
+        </div>
+        ${musicBlock()}`;
+
+    default:
+      return `<div style="padding:40px;text-align:center;color:#999">页面配置加载中...</div>`;
+  }
+}
+
+// 物料表格
+function renderMaterialsTable(){
+  let rows = npData.materials.map((m,i)=>`<tr>
+    <td>
+      <div class="np-material-img" onclick="document.getElementById('np-mat-img-${i}').click()">
+        ${m.img?`<img src="${m.img}"><div class="del-btn" onclick="event.stopPropagation();npData.materials[${i}].img='';renderNewProject()">🗑</div>`:'<div style="font-size:14px;color:#ccc">🗑</div>'}
+      </div>
+      <input type="file" id="np-mat-img-${i}" accept="image/*" style="display:none" onchange="npMatImgUpload(this,${i},'img')">
+    </td>
+    <td><input class="np-field-input" style="max-width:120px" value="${m.name}" oninput="npData.materials[${i}].name=this.value" maxlength="20"><span class="np-char-count">${m.name.length}/20</span></td>
+    <td>
+      <input class="np-field-input" style="max-width:100px" value="${m.btnText}" oninput="npData.materials[${i}].btnText=this.value" maxlength="8"><span class="np-char-count">${m.btnText.length}/8</span>
+      <div style="margin-top:4px;display:flex;align-items:center;gap:4px"><span style="font-size:11px">文本颜色</span><input type="checkbox" class="np-checkbox" ${m.btnTextColor?'checked':''} onchange="npData.materials[${i}].btnTextColor=this.checked"> <span style="font-size:11px">文本颜色</span></div>
+    </td>
+    <td>
+      <div class="np-material-img" onclick="document.getElementById('np-mat-detail-${i}').click()">
+        ${m.detailImg?`<img src="${m.detailImg}"><div class="del-btn" onclick="event.stopPropagation();npData.materials[${i}].detailImg='';renderNewProject()">🗑</div>`:'<div style="font-size:14px;color:#ccc">🗑</div>'}
+      </div>
+      <input type="file" id="np-mat-detail-${i}" accept="image/*" style="display:none" onchange="npMatImgUpload(this,${i},'detailImg')">
+    </td>
+    <td>
+      <button class="btn btn-primary" style="padding:4px 10px;font-size:11px" onclick="npAddMaterial(${i+1})">➕ 添加</button>
+      <button class="btn btn-outline" style="padding:4px 10px;font-size:11px;color:#ff5252;border-color:#ff5252" onclick="npRemoveMaterial(${i})">删除</button>
+    </td>
+  </tr>`).join('');
+
+  return `<div class="np-config-section">
+    <table class="np-material-table">
+      <thead><tr><th>物料图片</th><th>物料名称</th><th>按钮配置</th><th>详情图片</th><th>操作<span style="font-size:10px;color:#999">(最多添加个物料)</span></th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="np-img-hint" style="margin-top:8px">物料图片尺寸：600x600px（或者宽高1:1比例）　格式：png/jpg且不超过2MB</div>
+  </div>`;
+}
+
+// ===== 第三步：配置数据 =====
+function renderNpStep3(){
+  return `<div style="max-width:700px">
+    <div class="np-config-section">
+      <div class="np-config-title">活动配置</div>
+      <div class="np-field-row">
+        <label class="np-field-label"><span class="req">*</span> 活动开始时间</label>
+        <input class="np-field-input" type="datetime-local" id="np-cfg-start" value="${npData.configData.startTime||''}" onchange="npData.configData.startTime=this.value">
+      </div>
+      <div class="np-field-row">
+        <label class="np-field-label"><span class="req">*</span> 活动截止时间</label>
+        <input class="np-field-input" type="datetime-local" id="np-cfg-end" value="${npData.configData.endTime||''}" onchange="npData.configData.endTime=this.value">
+      </div>
+    </div>
+    <div class="np-config-section">
+      <div class="np-config-title">权限设置</div>
+      <p style="font-size:13px;color:#888;margin-bottom:8px">（手动添加企业微信名）</p>
+      <div class="perm-list" id="np-perm-list">${npPermUsers.length===0?'<div style="text-align:center;color:#999;padding:30px">暂无权限用户</div>':npPermUsers.map((u,i)=>`<div class="perm-item"><span class="perm-name">${u}</span><button class="perm-remove" onclick="npRemovePerm(${i})">移除</button></div>`).join('')}</div>
+      <div class="perm-add-row" style="margin-top:12px">
+        <input class="perm-add-input" id="np-perm-input" placeholder="输入企业微信名">
+        <button class="btn btn-primary" onclick="npAddPerm()">添加</button>
+      </div>
+    </div>
+    <div class="np-config-section">
+      <div class="np-config-title">数据导入</div>
+      <div class="np-field-row">
+        <label class="np-field-label">地址数据</label>
+        <button class="np-size-btn np-size-btn-primary" onclick="showMsg('批量导入地址功能演示中','i')">📋 批量导入</button>
+        <button class="np-size-btn" onclick="showMsg('下载地址模板功能演示中','i')">⬇ 下载模板</button>
+      </div>
+      <div class="np-field-row">
+        <label class="np-field-label">白名单数据</label>
+        <button class="np-size-btn np-size-btn-primary" onclick="showMsg('批量导入白名单功能演示中','i')">📋 批量导入</button>
+        <button class="np-size-btn" onclick="showMsg('下载白名单模板功能演示中','i')">⬇ 下载模板</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ===== 辅助函数 =====
+function npPageImgUpload(input,pageIdx,field){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    if(field.startsWith('images_')){
+      const arrIdx=parseInt(field.split('_')[1]);
+      if(!npData.pages[pageIdx].images) npData.pages[pageIdx].images=[];
+      npData.pages[pageIdx].images[arrIdx]=e.target.result;
+    }else{
+      npData.pages[pageIdx][field]=e.target.result;
+    }
+    renderNewProject();
+  };
+  reader.readAsDataURL(file);
+}
+
+function npPageTextChange(pageIdx,field,value){
+  if(field.startsWith('text')){
+    const idx=parseInt(field.replace('text',''));
+    if(!npData.pages[pageIdx].texts) npData.pages[pageIdx].texts=[];
+    npData.pages[pageIdx].texts[idx]=value;
+  }
+}
+
+function npMatImgUpload(input,matIdx,field){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{npData.materials[matIdx][field]=e.target.result;renderNewProject();};
+  reader.readAsDataURL(file);
+}
+
+function npAddMaterial(afterIdx){
+  npData.materials.splice(afterIdx,0,{img:'',name:'新物料',btnText:'查看详情',btnTextColor:true,btnColor:'#000',detailImg:''});
+  renderNewProject();
+}
+
+function npRemoveMaterial(idx){
+  if(npData.materials.length<=1){showMsg('至少保留一个物料','e');return;}
+  npData.materials.splice(idx,1);
+  renderNewProject();
+}
+
+function npGoStep(step){
+  if(step>npStep && npStep===1){
+    // 验证第一步
+    if(!npData.h5Title){showMsg('请输入H5主标题','e');return;}
+    if(!npData.h5Subtitle){showMsg('请输入H5副标题','e');return;}
+  }
+  npStep=step;
+  renderNewProject();
+}
+
+function npNextStep(){
+  if(npStep===1){
+    if(!npData.h5Title){showMsg('请输入H5主标题','e');return;}
+    if(!npData.h5Subtitle){showMsg('请输入H5副标题','e');return;}
+  }
+  npStep=Math.min(3,npStep+1);
+  renderNewProject();
+}
+
+function npPrevStep(){
+  npStep=Math.max(1,npStep-1);
+  renderNewProject();
+}
+
+function npPreviewH5(){
+  showMsg('预览H5功能演示中','i');
+}
+
+function npSaveProject(){
+  if(!npData.h5Title){showMsg('请输入H5主标题','e');return;}
+
+  const projs=ls(SK.proj);
+  const newId='proj_'+Date.now();
+  const newProjId='T'+String(projs.length+1).padStart(2,'0');
+  const now=new Date();
+
+  projs.push({
+    id:newId,
+    projId:newProjId,
+    title:npData.h5Title,
+    desc:npData.h5Subtitle,
+    quantity:0,
+    start:npData.configData.startTime?npData.configData.startTime+':00':now.toISOString(),
+    deadline:npData.configData.endTime?npData.configData.endTime+':00':'',
+    season:'',
+    status:'active',
+    createdAt:now.toISOString(),
+    type:'bg',
+    h5Data:JSON.parse(JSON.stringify(npData)),
+    permUsers:npPermUsers
+  });
+  ls(SK.proj,projs);
+  addLog('project','新建项目：'+npData.h5Title);
+  showMsg('项目创建成功','s');
+  curMenu='projMgr';
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.toggle('active',m.dataset.p==='projMgr'));
+  render();
+}
+
+// 新建项目-权限用户管理
+function npAddPerm(){
+  const input=g('np-perm-input');
+  const name=input.value.trim();
+  if(!name){showMsg('请输入企业微信名','e');return;}
+  if(npPermUsers.includes(name)){showMsg('该用户已存在','e');return;}
+  npPermUsers.push(name);
+  input.value='';
+  renderNewProject();
+  showMsg('已添加','s');
+}
+
+function npRemovePerm(idx){
+  npPermUsers.splice(idx,1);
+  renderNewProject();
+  showMsg('已移除','s');
+}
+
+// ========== 1.1.1 项目设置 ==========
+function openEditProj(projId){
+  editProjId=projId;
+  const projs=ls(SK.proj);
+  const p=projs.find(x=>x.id===projId);
+  if(!p){showMsg('项目不存在','e');return;}
+
+  setTimeout(()=>{
+    if(g('ep-title')) g('ep-title').value=p.title||'';
+    if(g('ep-quantity')) g('ep-quantity').value=p.quantity||'';
+    if(g('ep-start')) g('ep-start').value=p.start?p.start.slice(0,16):'';
+    if(g('ep-deadline')) g('ep-deadline').value=p.deadline?p.deadline.slice(0,16):'';
+    if(g('ep-status')) g('ep-status').value=p.status||'active';
+  },50);
+  g('modal-edit-proj').classList.add('show');
+}
+
+function saveEditProj(){
+  const projs=ls(SK.proj);
+  const idx=projs.findIndex(x=>x.id===editProjId);
+  if(idx===-1){showMsg('项目不存在','e');return;}
+
+  const title=g('ep-title').value.trim();
+  if(!title){showMsg('请输入项目名称','e');return;}
+
+  projs[idx].title=title;
+  projs[idx].quantity=parseInt(g('ep-quantity').value)||0;
+  projs[idx].start=g('ep-start').value?g('ep-start').value+':00':'';
+  projs[idx].deadline=g('ep-deadline').value?g('ep-deadline').value+':00':'';
+  projs[idx].status=g('ep-status').value;
+
+  ls(SK.proj,projs);
+  addLog('project','修改项目设置：'+title);
+  closeM('modal-edit-proj');
+  showMsg('项目设置已保存','s');
+  render();
+}
+
+// ========== 1.1.2 权限设置 ==========
+function openProjPerm(projId){
+  editProjPermId=projId;
+  const projs=ls(SK.proj);
+  const p=projs.find(x=>x.id===projId);
+  if(!p){showMsg('项目不存在','e');return;}
+
+  g('proj-perm-title').textContent=p.title+' - 权限设置';
+  const users=p.permUsers||[];
+  renderProjPermList(users);
+  if(g('proj-perm-add-input')) g('proj-perm-add-input').value='';
+  g('modal-proj-perm').classList.add('show');
+}
+
+function renderProjPermList(users){
+  const body=g('proj-perm-list-body');
+  if(!body)return;
+  if(!users||users.length===0){
+    body.innerHTML='<div style="text-align:center;color:#999;padding:40px">暂无权限用户</div>';
+    return;
+  }
+  body.innerHTML=users.map((u,i)=>`
+    <div class="perm-item">
+      <span class="perm-name">${u}</span>
+      <button class="perm-remove" onclick="removeProjPermUser(${i})">移除</button>
+    </div>
+  `).join('');
+}
+
+function addProjPermUser(){
+  const input=g('proj-perm-add-input');
+  const name=input.value.trim();
+  if(!name){showMsg('请输入企业微信名','e');return;}
+
+  const projs=ls(SK.proj);
+  const p=projs.find(x=>x.id===editProjPermId);
+  if(!p)return;
+  if(!p.permUsers) p.permUsers=[];
+  if(p.permUsers.includes(name)){showMsg('该用户已存在','e');return;}
+
+  p.permUsers.push(name);
+  ls(SK.proj,projs);
+  renderProjPermList(p.permUsers);
+  input.value='';
+  showMsg('已添加','s');
+}
+
+function removeProjPermUser(idx){
+  const projs=ls(SK.proj);
+  const p=projs.find(x=>x.id===editProjPermId);
+  if(!p||!p.permUsers)return;
+  p.permUsers.splice(idx,1);
+  ls(SK.proj,projs);
+  renderProjPermList(p.permUsers);
+  showMsg('已移除','s');
+}
+
+function saveProjPerm(){
+  addLog('perm','更新项目权限设置');
+  closeM('modal-proj-perm');
+  showMsg('权限已保存','s');
+}
+
+// ========== 1.1.3 删除项目 ==========
+function openDeleteProj(projId){
+  deleteProjId=projId;
+  const projs=ls(SK.proj);
+  const p=projs.find(x=>x.id===projId);
+  const name=p?p.title:'未知项目';
+  g('delete-confirm-text').textContent='是否确认删除 '+name+' ？';
+  g('modal-delete-confirm').classList.add('show');
+}
+
+function confirmDeleteProj(){
+  const projs=ls(SK.proj);
+  const idx=projs.findIndex(x=>x.id===deleteProjId);
+  if(idx===-1){showMsg('项目不存在','e');closeM('modal-delete-confirm');return;}
+
+  const title=projs[idx].title;
+  projs.splice(idx,1);
+  ls(SK.proj,projs);
+  addLog('project','删除项目：'+title);
+  closeM('modal-delete-confirm');
+  showMsg('项目已删除','s');
+  render();
 }
 
 // ===============================================================
