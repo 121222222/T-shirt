@@ -1010,6 +1010,20 @@ window.addEventListener('message', function(e) {
     // 先关闭所有弹窗
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
     document.getElementById('detail-modal').classList.remove('show');
+    
+    // 在跳转前先更新物料数据
+    if (adminH5Data && adminH5Data.materials && adminH5Data.materials.length > 0) {
+      defaultConfig.styles = adminH5Data.materials.map((m, i) => ({
+        id: 'style-' + i,
+        name: m.name || '款式' + (i + 1),
+        gender: m.name && m.name.includes('女') ? 'female' : 'male',
+        color: '',
+        emoji: m.name && m.name.includes('女') ? '👚' : '👕',
+        img: m.img || '',
+        btnText: m.btnText || '查看详情',
+        detailImg: m.detailImg || ''
+      }));
+    }
 
     if (targetPage === 'modal-notice') {
       // 温馨提示弹窗需要先显示一个背景页面
@@ -1017,6 +1031,11 @@ window.addEventListener('message', function(e) {
       document.getElementById('modal-notice').classList.add('show');
     } else {
       goPage(targetPage);
+    }
+
+    // 如果是选择款式页，重新渲染款式列表
+    if (pageIdx === 5) {
+      renderStyles();
     }
 
     // 如果是选择尺码页，需要先渲染尺码数据
@@ -1059,6 +1078,26 @@ window.addEventListener('message', function(e) {
     if (e.data.h5Data) {
       adminH5Data = e.data.h5Data;
     }
+    
+    // 更新物料/款式数据（无论当前页面是什么）
+    if (adminH5Data && adminH5Data.materials && adminH5Data.materials.length > 0) {
+      defaultConfig.styles = adminH5Data.materials.map((m, i) => ({
+        id: 'style-' + i,
+        name: m.name || '款式' + (i + 1),
+        gender: m.name && m.name.includes('女') ? 'female' : 'male',
+        color: '',
+        emoji: m.name && m.name.includes('女') ? '👚' : '👕',
+        img: m.img || '',
+        btnText: m.btnText || '查看详情',
+        detailImg: m.detailImg || ''
+      }));
+      // 如果当前在选择款式页，重新渲染款式列表
+      const activePage = document.querySelector('.page.active');
+      if (activePage && activePage.id === 'page-style') {
+        renderStyles();
+      }
+    }
+    
     // 应用配置到当前页面
     const currentPageIdx = e.data.pageIndex !== undefined ? e.data.pageIndex : getCurrentPageIndex();
     applyAdminConfig(currentPageIdx);
@@ -1137,6 +1176,7 @@ function applyAdminConfig(pageIdx) {
       if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
       if (stepDesc && pageData.texts[1]) stepDesc.textContent = pageData.texts[1];
     }
+    // 注意：物料/款式数据更新和渲染已在goto/updateConfig中处理
   }
 
   // 更新选择尺码页
