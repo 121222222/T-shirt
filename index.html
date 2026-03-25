@@ -971,6 +971,243 @@ function showToast(msg) {
   setTimeout(() => toast.classList.remove('show'), 2000);
 }
 
+// ========== 管理后台预览通信 ==========
+// 接收管理后台 postMessage，切换到对应页面用于预览
+const ADMIN_PAGE_MAP = {
+  0: 'page-welcome',     // 首页（欢迎页）
+  1: 'page-welcome',     // 首页-2（相同欢迎页）
+  2: 'modal-notice',     // 温馨提示弹窗
+  3: 'modal-notice',     // 温馨提示-2
+  4: 'modal-notice',     // 截止提醒（也用温馨提示弹窗）
+  5: 'page-style',       // 选择款式
+  6: 'page-size',        // 选择尺码
+  7: 'page-address',     // 选择地址
+  8: 'page-confirm',     // 选款确认
+  9: 'page-confirm',     // 选款确认-2（已到期）
+  10: 'page-success',    // 分享页/提交成功
+  11: 'page-success',    // 结束页
+  12: 'page-welcome'     // 白名单页
+};
+
+let isAdminPreview = false;
+let adminH5Data = null;  // 存储管理后台传来的H5配置数据
+
+window.addEventListener('message', function(e) {
+  if (!e.data || e.data.type !== 'admin-preview') return;
+  isAdminPreview = true;
+
+  const action = e.data.action;
+
+  // 保存H5配置数据用于实时预览
+  if (e.data.h5Data) {
+    adminH5Data = e.data.h5Data;
+  }
+
+  if (action === 'goto') {
+    const pageIdx = e.data.pageIndex;
+    const targetPage = ADMIN_PAGE_MAP[pageIdx];
+
+    // 先关闭所有弹窗
+    document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('show'));
+    document.getElementById('detail-modal').classList.remove('show');
+
+    if (targetPage === 'modal-notice') {
+      // 温馨提示弹窗需要先显示一个背景页面
+      goPage('page-style');
+      document.getElementById('modal-notice').classList.add('show');
+    } else {
+      goPage(targetPage);
+    }
+
+    // 如果是选择尺码页，需要先渲染尺码数据
+    if (pageIdx === 6) {
+      renderSizes('male');
+    }
+
+    // 如果是确认页，填充演示数据
+    if (pageIdx === 8 || pageIdx === 9) {
+      selection.styleName = selection.styleName || '男款-白色';
+      selection.size = selection.size || 'L';
+      selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
+      renderConfirm();
+    }
+
+    // 如果是成功页，填充演示数据
+    if (pageIdx === 10 || pageIdx === 11) {
+      selection.styleName = selection.styleName || '男款-白色';
+      selection.size = selection.size || 'L';
+      selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
+      renderSuccess();
+    }
+
+    // 应用配置数据到页面
+    if (adminH5Data) {
+      applyAdminConfig(pageIdx);
+    }
+  }
+
+  if (action === 'updateConfig') {
+    // 接收配置更新，实时刷新当前页面显示
+    if (e.data.config) {
+      adminH5Data = {
+        h5Title: e.data.config.h5Title,
+        h5Subtitle: e.data.config.h5Subtitle,
+        pages: e.data.config.pages,
+        materials: e.data.config.materials
+      };
+    }
+    if (e.data.h5Data) {
+      adminH5Data = e.data.h5Data;
+    }
+    // 应用配置到当前页面
+    const currentPageIdx = e.data.pageIndex !== undefined ? e.data.pageIndex : getCurrentPageIndex();
+    applyAdminConfig(currentPageIdx);
+  }
+
+  if (action === 'init') {
+    // 管理后台通知iframe初始化完成，可以接收指令
+    window.parent.postMessage({ type: 'h5-preview-ready' }, '*');
+  }
+});
+
+// 获取当前显示的页面索引
+function getCurrentPageIndex() {
+  const activePage = document.querySelector('.page.active');
+  if (!activePage) return 0;
+  const pageId = activePage.id;
+  // 根据页面ID反向查找索引
+  for (let idx in ADMIN_PAGE_MAP) {
+    if (ADMIN_PAGE_MAP[idx] === pageId) {
+      return parseInt(idx);
+    }
+  }
+  return 0;
+}
+
+// 应用管理后台的配置到页面
+function applyAdminConfig(pageIdx) {
+  if (!adminH5Data) return;
+
+  const pageData = adminH5Data.pages && adminH5Data.pages[pageIdx];
+
+  // 更新欢迎页标题
+  if (pageIdx === 0 || pageIdx === 1 || pageIdx === 12) {
+    const yearEl = document.querySelector('.welcome-year');
+    const titleEl = document.querySelector('.welcome-title');
+    const subtitleEl = document.querySelector('.welcome-subtitle');
+    
+    if (yearEl && adminH5Data.h5Title) {
+      // 尝试从h5Title提取年份和项目名
+      const h5Title = adminH5Data.h5Title;
+      yearEl.textContent = h5Title;
+    }
+    if (titleEl && adminH5Data.h5Subtitle) {
+      titleEl.textContent = '夏季文化衫';
+    }
+    if (subtitleEl) {
+      subtitleEl.textContent = adminH5Data.h5Subtitle || 'SUMMER COLLECTION';
+    }
+    
+    // 应用欢迎页文字配置
+    if (pageData && pageData.texts) {
+      if (yearEl && pageData.texts[0]) yearEl.textContent = pageData.texts[0];
+      if (titleEl && pageData.texts[1]) titleEl.textContent = pageData.texts[1];
+    }
+  }
+
+  // 更新温馨提示弹窗
+  if (pageIdx >= 2 && pageIdx <= 4) {
+    const modalTitle = document.querySelector('#modal-notice .modal-title');
+    const modalDesc = document.querySelector('#modal-notice .modal-desc');
+    const modalBtn = document.querySelector('#modal-notice .modal-btn');
+    
+    if (pageData && pageData.texts) {
+      if (modalTitle && pageData.texts[0]) modalTitle.textContent = pageData.texts[0];
+      if (modalDesc && pageData.texts[1]) modalDesc.textContent = pageData.texts[1];
+      if (modalBtn && pageData.texts[2]) modalBtn.textContent = pageData.texts[2];
+    }
+  }
+
+  // 更新选择款式页
+  if (pageIdx === 5) {
+    const stepLabel = document.querySelector('#page-style .step-label');
+    const stepDesc = document.querySelector('#page-style .step-desc');
+    
+    if (pageData && pageData.texts) {
+      if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
+      if (stepDesc && pageData.texts[1]) stepDesc.textContent = pageData.texts[1];
+    }
+  }
+
+  // 更新选择尺码页
+  if (pageIdx === 6) {
+    const stepLabel = document.querySelector('#page-size .step-label');
+    
+    if (pageData && pageData.texts) {
+      if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
+    }
+  }
+
+  // 更新选择地址页
+  if (pageIdx === 7) {
+    const stepLabel = document.querySelector('#page-address .step-label');
+    const formLabels = document.querySelectorAll('#page-address .form-label');
+    const noticeTitle = document.querySelector('#page-address .notice-title');
+    const noticeText = document.querySelector('#page-address .notice-text');
+    
+    if (pageData && pageData.texts) {
+      if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
+      // 办公地点标签
+      if (formLabels[0] && pageData.texts[2]) formLabels[0].childNodes[0].textContent = pageData.texts[2] + '：';
+      // 注意事项
+      if (noticeTitle && pageData.texts[6]) noticeTitle.textContent = pageData.texts[6];
+      if (noticeText && pageData.texts[7]) noticeText.textContent = pageData.texts[7];
+    }
+  }
+
+  // 更新确认页
+  if (pageIdx === 8 || pageIdx === 9) {
+    const confirmStep = document.querySelector('#page-confirm .confirm-step');
+    const confirmHint = document.querySelector('#page-confirm .confirm-hint');
+    
+    if (pageData && pageData.texts) {
+      if (confirmStep && pageData.texts[0]) confirmStep.textContent = pageData.texts[0];
+      if (confirmHint && pageData.texts[1]) confirmHint.textContent = pageData.texts[1];
+    }
+  }
+
+  // 更新成功页
+  if (pageIdx === 10 || pageIdx === 11) {
+    const successTitle = document.querySelector('#page-success .success-title');
+    const successDesc = document.querySelector('#page-success .success-desc');
+    
+    if (pageData && pageData.texts) {
+      if (successTitle && pageData.texts[0]) successTitle.textContent = pageData.texts[0];
+      if (successDesc && pageData.texts[1]) successDesc.textContent = pageData.texts[1];
+    }
+  }
+
+  // 应用背景图/背景色
+  if (pageData) {
+    const currentPage = document.getElementById(ADMIN_PAGE_MAP[pageIdx]);
+    if (currentPage) {
+      if (pageData.bgImg) {
+        currentPage.style.backgroundImage = `url(${pageData.bgImg})`;
+        currentPage.style.backgroundSize = 'cover';
+        currentPage.style.backgroundPosition = 'center';
+      }
+      if (pageData.bgColor && !pageData.bgImg) {
+        currentPage.style.backgroundColor = pageData.bgColor;
+      }
+    }
+  }
+}
+
+// 通知父窗口iframe已加载完成
+if (window.parent !== window) {
+  window.parent.postMessage({ type: 'h5-preview-ready' }, '*');
+}
+
 // ========== 启动 ==========
 init();
 </script>
