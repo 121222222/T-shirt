@@ -102,7 +102,7 @@ html, body {
 }
 .step-label { font-size: 20px; font-weight: 800; color: #1a1a2e; margin-bottom: 8px; }
 .step-desc { font-size: 13px; color: #888; margin-bottom: 20px; line-height: 1.5; }
-.style-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.style-grid { display: grid; gap: 12px; }
 .style-item {
   border: 3px solid transparent; border-radius: 16px; overflow: hidden; cursor: pointer;
   transition: all 0.3s ease; position: relative; background: #f8f8f8;
@@ -720,7 +720,17 @@ function closeNotice() {
 function renderStyles() {
   const grid = document.getElementById('style-grid');
   grid.innerHTML = '';
-  defaultConfig.styles.forEach(s => {
+  const styles = defaultConfig.styles;
+  const styleCount = styles.length;
+  
+  // 根据款式数量设置布局：<=2个时垂直布局，>2个时两列布局
+  if (styleCount <= 2) {
+    grid.style.gridTemplateColumns = '1fr';
+  } else {
+    grid.style.gridTemplateColumns = '1fr 1fr';
+  }
+  
+  styles.forEach(s => {
     const item = document.createElement('div');
     item.className = 'style-item' + (selection.style === s.id ? ' selected' : '');
     item.onclick = () => selectStyle(s.id);
@@ -982,10 +992,9 @@ const ADMIN_PAGE_MAP = {
   4: 'page-size',        // 选择尺码
   5: 'page-address',     // 选择地址
   6: 'page-confirm',     // 选款确认
-  7: 'page-confirm',     // 选款确认-2（已到期）
-  8: 'page-success',     // 分享页/提交成功
-  9: 'page-success',     // 结束页
-  10: 'page-welcome'     // 白名单页
+  7: 'page-success',     // 分享页
+  8: 'modal-notice',     // 选码结束通知（复用温馨提示弹窗）
+  9: 'page-welcome'      // 访问权限（复用欢迎页展示）
 };
 
 let isAdminPreview = false;
@@ -1043,15 +1052,15 @@ window.addEventListener('message', function(e) {
     }
 
     // 如果是确认页，填充演示数据
-    if (pageIdx === 6 || pageIdx === 7) {
+    if (pageIdx === 6) {
       selection.styleName = selection.styleName || '男款-白色';
       selection.size = selection.size || 'L';
       selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
       renderConfirm();
     }
 
-    // 如果是成功页，填充演示数据
-    if (pageIdx === 8 || pageIdx === 9) {
+    // 如果是分享页，填充演示数据
+    if (pageIdx === 7) {
       selection.styleName = selection.styleName || '男款-白色';
       selection.size = selection.size || 'L';
       selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
@@ -1129,7 +1138,7 @@ function applyAdminConfig(pageIdx) {
   const pageData = adminH5Data.pages && adminH5Data.pages[pageIdx];
 
   // 更新欢迎页标题
-  if (pageIdx === 0 || pageIdx === 1 || pageIdx === 10) {
+  if (pageIdx === 0 || pageIdx === 1 || pageIdx === 9) {
     const yearEl = document.querySelector('.welcome-year');
     const titleEl = document.querySelector('.welcome-title');
     const subtitleEl = document.querySelector('.welcome-subtitle');
@@ -1245,33 +1254,61 @@ function applyAdminConfig(pageIdx) {
   }
 
   // 更新选择尺码页
-  if (pageIdx === 6) {
+  if (pageIdx === 4) {
     const stepLabel = document.querySelector('#page-size .step-label');
+    const selectedInfo = document.querySelector('#page-size .selected-info');
     
     if (pageData && pageData.texts) {
       if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
+      if (selectedInfo && pageData.texts[1]) selectedInfo.textContent = pageData.texts[1];
+    }
+    // 应用颜色
+    if (pageData && pageData.toggles) {
+      if (stepLabel && pageData.toggles.text0_color) {
+        stepLabel.style.color = pageData.toggles.text0_color;
+      }
     }
   }
 
   // 更新选择地址页
-  if (pageIdx === 7) {
+  if (pageIdx === 5) {
     const stepLabel = document.querySelector('#page-address .step-label');
+    const stepDesc = document.querySelector('#page-address .step-desc');
     const formLabels = document.querySelectorAll('#page-address .form-label');
+    const formLabelHint = document.querySelector('#page-address .form-label-hint');
     const noticeTitle = document.querySelector('#page-address .notice-title');
     const noticeText = document.querySelector('#page-address .notice-text');
+    const submitBtn = document.querySelector('#page-address .btn-primary');
     
     if (pageData && pageData.texts) {
       if (stepLabel && pageData.texts[0]) stepLabel.textContent = pageData.texts[0];
+      // 副文案（暂时没有对应元素，可以添加）
       // 办公地点标签
       if (formLabels[0] && pageData.texts[2]) formLabels[0].childNodes[0].textContent = pageData.texts[2] + '：';
+      // 提示文案
+      if (formLabelHint && pageData.texts[3]) formLabelHint.textContent = pageData.texts[3];
+      // 备注标签
+      if (formLabels[1] && pageData.texts[4]) formLabels[1].textContent = pageData.texts[4];
       // 注意事项
       if (noticeTitle && pageData.texts[6]) noticeTitle.textContent = pageData.texts[6];
       if (noticeText && pageData.texts[7]) noticeText.textContent = pageData.texts[7];
+      // 提交按钮
+      if (submitBtn && pageData.texts[8]) submitBtn.textContent = pageData.texts[8];
+    }
+    // 应用颜色
+    if (pageData && pageData.toggles) {
+      if (stepLabel && pageData.toggles.text0_color) {
+        stepLabel.style.color = pageData.toggles.text0_color;
+      }
+      if (submitBtn) {
+        if (pageData.toggles.text8_color) submitBtn.style.color = pageData.toggles.text8_color;
+        if (pageData.toggles.text8_btnColorVal) submitBtn.style.background = pageData.toggles.text8_btnColorVal;
+      }
     }
   }
 
   // 更新确认页
-  if (pageIdx === 6 || pageIdx === 7) {
+  if (pageIdx === 6) {
     const confirmStep = document.querySelector('#page-confirm .confirm-step');
     const confirmHint = document.querySelector('#page-confirm .confirm-hint');
     
@@ -1279,10 +1316,19 @@ function applyAdminConfig(pageIdx) {
       if (confirmStep && pageData.texts[0]) confirmStep.textContent = pageData.texts[0];
       if (confirmHint && pageData.texts[1]) confirmHint.textContent = pageData.texts[1];
     }
+    // 应用颜色
+    if (pageData && pageData.toggles) {
+      if (confirmStep && pageData.toggles.text0_color) {
+        confirmStep.style.color = pageData.toggles.text0_color;
+      }
+      if (confirmHint && pageData.toggles.text1_color) {
+        confirmHint.style.color = pageData.toggles.text1_color;
+      }
+    }
   }
 
-  // 更新成功页
-  if (pageIdx === 10 || pageIdx === 11) {
+  // 更新分享页
+  if (pageIdx === 7) {
     const successTitle = document.querySelector('#page-success .success-title');
     const successDesc = document.querySelector('#page-success .success-desc');
     
@@ -1292,8 +1338,35 @@ function applyAdminConfig(pageIdx) {
     }
   }
 
+  // 更新选码结束通知（复用温馨提示弹窗样式）
+  if (pageIdx === 8) {
+    const modalTitle = document.querySelector('#modal-notice .modal-title');
+    const modalDesc = document.querySelector('#modal-notice .modal-desc');
+    const modalBtn = document.querySelector('#modal-notice .modal-btn');
+    const modalContent = document.querySelector('#modal-notice .modal-content');
+    
+    if (pageData && pageData.texts) {
+      if (modalTitle && pageData.texts[0]) modalTitle.textContent = pageData.texts[0];
+      if (modalDesc && pageData.texts[1]) modalDesc.textContent = pageData.texts[1];
+      if (modalBtn && pageData.texts[2]) modalBtn.textContent = pageData.texts[2];
+    }
+    
+    // 应用颜色
+    if (pageData && pageData.toggles) {
+      if (modalTitle && pageData.toggles.text0_color) modalTitle.style.color = pageData.toggles.text0_color;
+      if (modalDesc && pageData.toggles.text1_color) modalDesc.style.color = pageData.toggles.text1_color;
+      if (modalBtn && pageData.toggles.text2_color) modalBtn.style.color = pageData.toggles.text2_color;
+      if (modalBtn && pageData.toggles.text2_btnColorVal) modalBtn.style.background = pageData.toggles.text2_btnColorVal;
+    }
+    
+    // 应用背景色
+    if (modalContent && pageData && pageData.bgColor) {
+      modalContent.style.background = pageData.bgColor;
+    }
+  }
+
   // 应用背景图/背景色（通用逻辑，针对非欢迎页）
-  if (pageData && pageIdx !== 0 && pageIdx !== 1 && pageIdx !== 10) {
+  if (pageData && pageIdx !== 0 && pageIdx !== 1 && pageIdx !== 9) {
     const currentPage = document.getElementById(ADMIN_PAGE_MAP[pageIdx]);
     if (currentPage) {
       if (pageData.bgImg) {
