@@ -553,7 +553,6 @@ html, body {
       <button class="btn-secondary" onclick="reSelect()">重新选择</button>
       <button class="btn-primary" onclick="viewRecord()">查看记录</button>
     </div>
-    <div class="success-share" onclick="generateShare()">🖼️ 生成分享图</div>
   </div>
 </div>
 
@@ -619,15 +618,33 @@ const defaultConfig = {
     'XXXL': '建议185cm+，81kg+'
   },
   addresses: [
-    { id: 'sz-1', name: '深圳-腾讯大厦', region: '深圳' },
-    { id: 'sz-2', name: '深圳-腾讯滨海大厦', region: '深圳' },
-    { id: 'sz-3', name: '深圳-金地威新', region: '深圳' },
-    { id: 'bj-1', name: '北京-总部大厦', region: '北京' },
-    { id: 'bj-2', name: '北京-融科资讯中心', region: '北京' },
-    { id: 'sh-1', name: '上海-腾讯大厦', region: '上海' },
-    { id: 'gz-1', name: '广州-TIT创意园', region: '广州' },
-    { id: 'cd-1', name: '成都-腾讯大厦', region: '成都' },
-    { id: 'wh-1', name: '武汉-光谷研发中心', region: '武汉' }
+    { id: 'sz-1', name: '深圳-金地威新', region: '深圳' },
+    { id: 'sz-2', name: '深圳-光启大厦', region: '深圳' },
+    { id: 'sz-3', name: '深圳-滨海大厦', region: '深圳' },
+    { id: 'sz-4', name: '深圳-其他大厦', region: '深圳' },
+    { id: 'bj-1', name: '北京-北京腾讯大厦', region: '北京' },
+    { id: 'bj-2', name: '北京-其他大厦', region: '北京' },
+    { id: 'cd-1', name: '成都-成都腾讯大厦A座', region: '成都' },
+    { id: 'cd-2', name: '成都-成都腾讯大厦B座', region: '成都' },
+    { id: 'cd-3', name: '成都-芯谷中心', region: '成都' },
+    { id: 'cd-4', name: '成都-其他大厦', region: '成都' },
+    { id: 'my-1', name: '绵阳-绵阳科创中心', region: '绵阳' },
+    { id: 'my-2', name: '绵阳-其他大厦', region: '绵阳' },
+    { id: 'cq-1', name: '重庆-西南总部大厦', region: '重庆' },
+    { id: 'cq-2', name: '重庆-永川大数据产业园', region: '重庆' },
+    { id: 'cq-3', name: '重庆-高科太阳座大厦', region: '重庆' },
+    { id: 'cq-4', name: '重庆-其他大厦', region: '重庆' },
+    { id: 'hf-1', name: '合肥-中安创谷科技园', region: '合肥' },
+    { id: 'hf-2', name: '合肥-其他大厦', region: '合肥' },
+    { id: 'yc-1', name: '银川-银川iBi育成中心', region: '银川' },
+    { id: 'yc-2', name: '银川-其他大厦', region: '银川' },
+    { id: 'wh-1', name: '武汉-武汉研发中心', region: '武汉' },
+    { id: 'wh-2', name: '武汉-其他大厦', region: '武汉' },
+    { id: 'hn-1', name: '海南-澄迈生态软件园', region: '海南' },
+    { id: 'hn-2', name: '海南-其他大厦', region: '海南' },
+    { id: 'sh-1', name: '上海-滨江大厦', region: '上海' },
+    { id: 'sh-2', name: '上海-其他大厦', region: '上海' },
+    { id: 'other-1', name: '其他-其他大厦', region: '其他' }
   ]
 };
 

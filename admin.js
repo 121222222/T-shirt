@@ -209,6 +209,7 @@ function render(){
   else if(curMenu==='admin') renderAdmin(c);
   else if(curMenu==='dept') renderDept(c);
   else if(curMenu==='receiver') renderReceiver(c);
+  else if(curMenu==='userMgr') renderUserMgr(c);
 }
 
 // ===============================================================
@@ -627,28 +628,44 @@ function renderPhonePreview(pageIdx){
       <div style="margin-top:12px"><b style="font-size:12px;color:${pd.toggles.text6_color||'#000'}">${pd.texts[6]||'注意事项'}</b><div style="font-size:10px;color:#666;margin-top:4px;line-height:1.6">${pd.texts[7]||'文化衫选款选码截止至...'}</div></div>
       <div style="margin-top:16px;text-align:center;padding:10px;background:${pd.toggles.text8_btnColorVal||'#333'};color:${pd.toggles.text8_color||'#fff'};border-radius:24px;font-size:13px">${pd.texts[8]||'提交本次选码结果'}</div>
     </div>`,
-    6:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
-      <div style="font-weight:700;font-size:14px;color:${pd.toggles.text0_color||'#000000'}">${pd.texts[0]||'Step4：选款选码确认'}</div>
-      <div style="font-size:11px;color:${pd.toggles.text1_color||'#666'};margin-top:4px">${pd.texts[1]||''}</div>
-      <div style="background:#fff;border-radius:8px;margin-top:12px;padding:12px;text-align:center">
-        <div style="height:80px;background:${pd.toggles.sizeBgColor||'#e0e0e0'};border-radius:6px;margin-bottom:8px;${pd.bgImg?`background:url(${pd.bgImg}) center/cover`:''}"></div>
-        <div style="font-size:10px;color:#666">头像 / 尺寸 / 微信昵称 / 地址</div>
+    6:()=>{
+      const firstMaterial = npData.materials[0] || {name:'男款-白色',img:''};
+      return `<div style="height:100%;background:linear-gradient(180deg,#4a7c28 0%,#c4a265 60%,#d4b980 100%);padding:12px;display:flex;flex-direction:column;overflow:hidden">
+      <div style="font-weight:700;font-size:13px;color:${pd.toggles.text0_color||'#1565c0'}">${pd.texts[0]||'Step2：选择尺码'}</div>
+      <div style="font-size:10px;color:${pd.toggles.text1_color||'#666'};margin-top:2px">${pd.texts[1]||'在5月30日18:00前，请务必核对填写信息并确认提交成功'}</div>
+      <div style="background:#fff;border-radius:12px;margin-top:8px;padding:12px;flex:1;min-height:0;overflow-y:auto">
+        <div style="display:flex;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid #f0f0f0">
+          <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#4caf50,#2e7d32);display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700">张</div>
+          <div><div style="font-size:12px;font-weight:600">张三</div><div style="font-size:9px;color:#888">TEG-基础架构部</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 0;background:#f8f9fa;border-radius:8px;margin-top:10px;padding:10px">
+          <div style="width:50px;height:50px;border-radius:8px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;${firstMaterial.img?`background:url(${firstMaterial.img}) center/contain no-repeat #fff`:''}"><span style="font-size:24px">${firstMaterial.img?'':'👕'}</span></div>
+          <div><div style="font-size:12px;font-weight:600">${firstMaterial.name}</div><div style="font-size:10px;color:#888">尺码 | M</div></div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5"><div style="width:24px;height:24px;border-radius:6px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;font-size:12px">👕</div><div><div style="font-size:9px;color:#999">选择款式</div><div style="font-size:11px;font-weight:600">${firstMaterial.name}</div></div></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f5f5f5"><div style="width:24px;height:24px;border-radius:6px;background:#fff3e0;display:flex;align-items:center;justify-content:center;font-size:12px">📏</div><div><div style="font-size:9px;color:#999">选择尺码</div><div style="font-size:11px;font-weight:600">M</div></div></div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0"><div style="width:24px;height:24px;border-radius:6px;background:#fce4ec;display:flex;align-items:center;justify-content:center;font-size:12px">📍</div><div><div style="font-size:9px;color:#999">送达地址</div><div style="font-size:11px;font-weight:600">深圳-金地威新</div></div></div>
+        </div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <div style="flex:1;padding:8px;background:${pd.toggles.text2_btnColorVal||'#fff'};border-radius:8px;text-align:center;font-size:11px;color:${pd.toggles.text2_color||'#1565c0'}">${pd.texts[2]||'确定尺码'}</div>
-        <div style="flex:1;padding:8px;background:#333;color:#fff;border-radius:8px;text-align:center;font-size:11px">${pd.texts[3]||'生成分享图'}</div>
-      </div>
-    </div>`,
-    7:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#2e7d32,#4caf50)'};display:flex;flex-direction:column;justify-content:space-between;padding:20px;color:#fff">
-      <div style="font-size:11px;text-align:center">13th ANNIVERSARY</div>
-      <div style="text-align:center">
-        ${pd.images[0]?`<img src="${pd.images[0]}" style="max-width:100%;max-height:100px;border-radius:8px;margin-bottom:12px">`:'<div style="height:100px;background:rgba(255,255,255,.1);border-radius:8px;margin-bottom:12px"></div>'}
-        <div style="font-size:16px;font-weight:700">Harrington<br>Leisure Jacket</div>
-        <div style="font-size:10px;margin-top:12px;opacity:.8">${pd.texts[0]||'#WE ARE TEG# 我是第xxxx位拥有2025TEG13周年冬季文化衫的同学~'}</div>
-      </div>
-      <div style="text-align:center">
-        <div style="font-size:10px;opacity:.6">长按保存图片</div>
-        <div style="margin-top:8px;padding:8px 20px;background:rgba(255,255,255,.2);border-radius:20px;font-size:12px">返回上一页</div>
+      <div style="margin-top:8px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:20px;font-size:12px;flex-shrink:0">${pd.texts[2]||'确认提交'}</div>
+    </div>`;
+    },
+    7:()=>`<div style="height:100%;background:linear-gradient(180deg,#4a7c28 0%,#c4a265 60%,#d4b980 100%);display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px">
+      <div style="background:#fff;border-radius:16px;padding:24px 20px;width:100%;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+        <div style="font-size:48px;margin-bottom:12px">🎉</div>
+        <div style="font-size:18px;font-weight:700;color:#333">${pd.texts[0]||'Step3：选择地址'}</div>
+        <div style="font-size:11px;color:#888;margin-top:8px;line-height:1.6">${pd.texts[1]||'您的选款信息已记录，可在"我的记录"中查看。如需修改请在截止时间前操作。'}</div>
+        <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-top:16px;text-align:left">
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:11px"><span style="color:#999">款式</span><span style="color:#333;font-weight:600">男款-白色</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:11px"><span style="color:#999">尺码</span><span style="color:#333;font-weight:600">M</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:11px"><span style="color:#999">送达地址</span><span style="color:#333;font-weight:600">深圳-金地威新</span></div>
+          <div style="display:flex;justify-content:space-between;padding:6px 0;font-size:11px"><span style="color:#999">提交时间</span><span style="color:#333;font-weight:600">2026/3/26 14:14:52</span></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <div style="flex:1;padding:10px;border:1px solid #ddd;border-radius:20px;font-size:11px;color:#333">重新选择</div>
+          <div style="flex:1;padding:10px;background:#333;color:#fff;border-radius:20px;font-size:11px">查看记录</div>
+        </div>
       </div>
     </div>`,
     8:()=>`<div style="height:100%;background:${pd.bgColor||'#1a237e'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
@@ -2332,6 +2349,490 @@ function downloadCSV(csv,filename){
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
   showMsg('数据已导出','s');
+}
+
+// ===============================================================
+// ========== 用户管理与角色管理模块 ==========
+// ===============================================================
+const SK_USERS = 'teg_sys_users';
+const SK_ROLES = 'teg_sys_roles';
+
+// 用户管理状态
+let umTab = 'user'; // user | role
+let umPage = 1;
+let umRolePage = 1;
+let editingUserId = null;
+let editingRoleId = null;
+let currentPermRoleId = null;
+let userAvatarData = '';
+
+// 初始化用户和角色数据
+function initUserRoleData(){
+  if(!localStorage.getItem(SK_USERS)){
+    const defaultUsers = [
+      {id:'u1',avatar:'',name:'v_cxxche',username:'v_cxxche',phone:'13518611360',email:'cxxche@tencent.com',role:'管理员',status:true,lastLogin:'2026-03-25 15:37:29',createdAt:'2026-03-20 16:30:15'},
+      {id:'u2',avatar:'',name:'vickyfan',username:'vickyfan',phone:'13518611360',email:'vickyfan@tencent.com',role:'管理员',status:true,lastLogin:'2025-11-02 22:02:09',createdAt:'2025-10-13 15:29:47'},
+      {id:'u3',avatar:'',name:'v_qqqluo',username:'v_qqqluo',phone:'13644507301',email:'qqqluo@tencent.com',role:'管理员',status:true,lastLogin:'2025-11-10 18:45:11',createdAt:'2025-08-21 17:06:00'},
+      {id:'u4',avatar:'',name:'v_bttzzou',username:'v_bttzzou',phone:'13518611360',email:'bttzzou@tencent.com',role:'管理员',status:true,lastLogin:'2025-03-10 15:44:51',createdAt:'2024-09-03 15:22:28'},
+      {id:'u5',avatar:'',name:'evelynqu',username:'evelynqu',phone:'13518611360',email:'evelynqu@tencent.com',role:'管理员',status:true,lastLogin:'2025-10-04 16:21:41',createdAt:'2024-09-02 10:43:56'}
+    ];
+    ls(SK_USERS, defaultUsers);
+  }
+  if(!localStorage.getItem(SK_ROLES)){
+    const defaultRoles = [
+      {id:'r1',name:'数据统计',desc:'-',status:true,createdAt:'2022-06-17 18:06:19',permissions:['data','stats']},
+      {id:'r2',name:'管理员',desc:'管理员',status:true,createdAt:'2022-03-24 17:15:25',permissions:['data','banner','activity','official','team','reward','stats','system','user','role','message','notice']}
+    ];
+    ls(SK_ROLES, defaultRoles);
+  }
+}
+initUserRoleData();
+
+// 渲染用户管理页面
+function renderUserMgr(c){
+  // 取消侧边栏选中
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+  
+  c.innerHTML=`
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+    <button class="btn btn-outline" onclick="goMenu('admin')" style="padding:6px 14px;font-size:12px">← 返回</button>
+    <div class="page-title" style="margin-bottom:0;color:var(--teal)">${umTab==='user'?'用户管理':'角色管理'}</div>
+  </div>
+  
+  <div class="um-tabs">
+    <button class="um-tab ${umTab==='user'?'active':''}" onclick="switchUmTab('user')">用户管理</button>
+    <button class="um-tab ${umTab==='role'?'active':''}" onclick="switchUmTab('role')">角色管理</button>
+  </div>
+  
+  ${umTab==='user' ? renderUserList() : renderRoleList()}
+  `;
+}
+
+function switchUmTab(tab){
+  umTab = tab;
+  umPage = 1;
+  umRolePage = 1;
+  render();
+}
+
+// 渲染用户列表
+function renderUserList(){
+  const users = ls(SK_USERS) || [];
+  const start = (umPage-1)*PAGE_SIZE;
+  const pageUsers = users.slice(start, start+PAGE_SIZE);
+  
+  return `
+  <div class="card">
+    <div class="card-hd">
+      <div class="filter-bar" style="margin-bottom:0;flex:1">
+        <div class="filter-item">
+          <span class="filter-label">用户名</span>
+          <input class="filter-input" id="um-f-username" placeholder="请输入用户名" style="min-width:140px">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">姓名</span>
+          <input class="filter-input" id="um-f-name" placeholder="请输入姓名" style="min-width:140px">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">状态</span>
+          <select class="filter-select" id="um-f-status" style="min-width:100px">
+            <option value="">请选择</option>
+            <option value="true">启用</option>
+            <option value="false">禁用</option>
+          </select>
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">时间</span>
+          <input class="filter-input" type="date" id="um-f-start" style="min-width:120px">
+          <span style="color:#999">至</span>
+          <input class="filter-input" type="date" id="um-f-end" style="min-width:120px">
+        </div>
+        <button class="btn btn-primary" onclick="filterUsers()">筛选</button>
+        <button class="btn btn-outline" onclick="resetUserFilter()">重置</button>
+      </div>
+    </div>
+    <div class="card-bd">
+      <button class="btn btn-primary" onclick="openUserEdit()" style="margin-bottom:16px">新建</button>
+      <table class="dtable">
+        <thead><tr>
+          <th>序号</th>
+          <th>姓名</th>
+          <th>用户名</th>
+          <th>联系方式</th>
+          <th>角色名称</th>
+          <th>状态</th>
+          <th>最近登录时间</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr></thead>
+        <tbody>
+          ${pageUsers.map((u,i)=>`<tr>
+            <td>${start+i+1}</td>
+            <td>${u.name}</td>
+            <td>${u.username}</td>
+            <td>${u.phone||'-'}</td>
+            <td>${u.role}</td>
+            <td><div class="um-toggle ${u.status?'on':''}" onclick="toggleUserStatus('${u.id}')"></div></td>
+            <td>${u.lastLogin||'-'}</td>
+            <td>${u.createdAt||'-'}</td>
+            <td>
+              <button class="action-link" onclick="resetUserPwd('${u.id}')">重置密码</button>
+              <button class="action-link action-link-green" onclick="openUserEdit('${u.id}')">编辑</button>
+              <button class="action-link action-link-red" onclick="deleteUser('${u.id}')">删除</button>
+            </td>
+          </tr>`).join('')||'<tr><td colspan="9" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>'}
+        </tbody>
+      </table>
+      ${renderPagination(users.length, umPage, 'goUmPage')}
+    </div>
+  </div>
+  `;
+}
+
+// 渲染角色列表
+function renderRoleList(){
+  const roles = ls(SK_ROLES) || [];
+  const start = (umRolePage-1)*PAGE_SIZE;
+  const pageRoles = roles.slice(start, start+PAGE_SIZE);
+  
+  return `
+  <div class="card">
+    <div class="card-hd">
+      <div class="filter-bar" style="margin-bottom:0;flex:1">
+        <div class="filter-item">
+          <span class="filter-label">角色</span>
+          <input class="filter-input" id="um-f-role" placeholder="请输入角色" style="min-width:180px">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">状态</span>
+          <select class="filter-select" id="um-f-role-status" style="min-width:120px">
+            <option value="">请选择状态</option>
+            <option value="true">启用</option>
+            <option value="false">禁用</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="filterRoles()">筛选</button>
+        <button class="btn btn-outline" onclick="resetRoleFilter()">重置</button>
+      </div>
+    </div>
+    <div class="card-bd">
+      <button class="btn btn-primary" onclick="openRoleEdit()" style="margin-bottom:16px">新建</button>
+      <table class="dtable">
+        <thead><tr>
+          <th>角色名称</th>
+          <th>角色描述</th>
+          <th>状态</th>
+          <th>创建时间</th>
+          <th>操作</th>
+        </tr></thead>
+        <tbody>
+          ${pageRoles.map(r=>`<tr>
+            <td>${r.name}</td>
+            <td>${r.desc||'-'}</td>
+            <td><div class="um-toggle ${r.status?'on':''}" onclick="toggleRoleStatus('${r.id}')"></div></td>
+            <td>${r.createdAt||'-'}</td>
+            <td>
+              <button class="action-link" onclick="openRolePerm('${r.id}')">权限管理</button>
+              <button class="action-link action-link-green" onclick="openRoleEdit('${r.id}')">编辑</button>
+            </td>
+          </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>'}
+        </tbody>
+      </table>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px;align-items:center;gap:8px">
+        <span style="font-size:13px;color:#999">共 ${roles.length} 条</span>
+        <div class="pagination-btns">
+          ${Array.from({length:Math.ceil(roles.length/PAGE_SIZE)||1},(_,i)=>`<button class="page-btn ${i+1===umRolePage?'active':''}" onclick="goUmRolePage(${i+1})">${i+1}</button>`).join('')}
+        </div>
+        <span style="font-size:12px;color:#999">跳转</span>
+      </div>
+    </div>
+  </div>
+  `;
+}
+
+function goUmPage(p){ umPage=p; render(); }
+function goUmRolePage(p){ umRolePage=p; render(); }
+
+// 用户状态切换
+function toggleUserStatus(id){
+  const users = ls(SK_USERS);
+  const user = users.find(u=>u.id===id);
+  if(user){
+    user.status = !user.status;
+    ls(SK_USERS, users);
+    render();
+    showMsg(user.status?'已启用':'已禁用','s');
+  }
+}
+
+// 角色状态切换
+function toggleRoleStatus(id){
+  const roles = ls(SK_ROLES);
+  const role = roles.find(r=>r.id===id);
+  if(role){
+    role.status = !role.status;
+    ls(SK_ROLES, roles);
+    render();
+    showMsg(role.status?'已启用':'已禁用','s');
+  }
+}
+
+// 打开用户编辑弹窗
+function openUserEdit(id){
+  editingUserId = id || null;
+  userAvatarData = '';
+  const modal = g('modal-user-edit');
+  const title = g('user-edit-title');
+  
+  if(id){
+    const users = ls(SK_USERS);
+    const user = users.find(u=>u.id===id);
+    if(user){
+      title.textContent = '编辑';
+      g('user-edit-name').value = user.name||'';
+      g('user-edit-username').value = user.username||'';
+      g('user-edit-phone').value = user.phone||'';
+      g('user-edit-email').value = user.email||'';
+      g('user-edit-pwd').value = '••••••••••••••••';
+      userAvatarData = user.avatar||'';
+      updateAvatarPreview();
+    }
+  }else{
+    title.textContent = '新增';
+    g('user-edit-name').value = '';
+    g('user-edit-username').value = '';
+    g('user-edit-phone').value = '';
+    g('user-edit-email').value = '';
+    g('user-edit-pwd').value = '';
+    updateAvatarPreview();
+  }
+  
+  modal.classList.add('show');
+}
+
+function updateAvatarPreview(){
+  const upload = g('user-avatar-upload');
+  if(userAvatarData){
+    upload.innerHTML = `<img src="${userAvatarData}" style="width:100%;height:100%;object-fit:cover;border-radius:8px"><div class="del-btn" onclick="event.stopPropagation();userAvatarData='';updateAvatarPreview()">🗑</div>`;
+  }else{
+    upload.innerHTML = `<div style="font-size:24px;color:#ccc" id="user-avatar-placeholder">☁</div><div class="np-img-upload-text" id="user-avatar-text">请上传头像</div>`;
+  }
+}
+
+function uploadUserAvatar(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    userAvatarData = e.target.result;
+    updateAvatarPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function togglePwdVisible(){
+  const pwd = g('user-edit-pwd');
+  pwd.type = pwd.type==='password' ? 'text' : 'password';
+}
+
+function saveUserEdit(){
+  const name = g('user-edit-name').value.trim();
+  const username = g('user-edit-username').value.trim();
+  const phone = g('user-edit-phone').value.trim();
+  const email = g('user-edit-email').value.trim();
+  
+  if(!name){showMsg('请输入姓名','e');return;}
+  if(!username){showMsg('请输入用户名','e');return;}
+  
+  const users = ls(SK_USERS);
+  
+  if(editingUserId){
+    const idx = users.findIndex(u=>u.id===editingUserId);
+    if(idx>=0){
+      users[idx].name = name;
+      users[idx].username = username;
+      users[idx].phone = phone;
+      users[idx].email = email;
+      users[idx].avatar = userAvatarData;
+    }
+  }else{
+    users.push({
+      id: 'u'+Date.now(),
+      avatar: userAvatarData,
+      name: name,
+      username: username,
+      phone: phone,
+      email: email,
+      role: '管理员',
+      status: true,
+      lastLogin: '-',
+      createdAt: fmtTime(new Date())
+    });
+  }
+  
+  ls(SK_USERS, users);
+  closeM('modal-user-edit');
+  render();
+  showMsg('保存成功','s');
+}
+
+function deleteUser(id){
+  if(!confirm('确定要删除该用户吗？')) return;
+  let users = ls(SK_USERS);
+  users = users.filter(u=>u.id!==id);
+  ls(SK_USERS, users);
+  render();
+  showMsg('已删除','s');
+}
+
+function resetUserPwd(id){
+  showMsg('密码已重置为默认密码','s');
+}
+
+function filterUsers(){
+  // 简化筛选逻辑，实际可扩展
+  render();
+}
+
+function resetUserFilter(){
+  const els = ['um-f-username','um-f-name','um-f-status','um-f-start','um-f-end'];
+  els.forEach(id=>{const el=g(id);if(el)el.value='';});
+  render();
+}
+
+// 打开角色编辑弹窗
+function openRoleEdit(id){
+  editingRoleId = id || null;
+  const modal = g('modal-role-edit');
+  const title = g('role-edit-title');
+  
+  if(id){
+    const roles = ls(SK_ROLES);
+    const role = roles.find(r=>r.id===id);
+    if(role){
+      title.textContent = '编辑角色';
+      g('role-edit-name').value = role.name||'';
+      g('role-edit-desc').value = role.desc||'';
+    }
+  }else{
+    title.textContent = '新增角色';
+    g('role-edit-name').value = '';
+    g('role-edit-desc').value = '';
+  }
+  
+  modal.classList.add('show');
+}
+
+function saveRoleEdit(){
+  const name = g('role-edit-name').value.trim();
+  const desc = g('role-edit-desc').value.trim();
+  
+  if(!name){showMsg('请输入角色名称','e');return;}
+  
+  const roles = ls(SK_ROLES);
+  
+  if(editingRoleId){
+    const idx = roles.findIndex(r=>r.id===editingRoleId);
+    if(idx>=0){
+      roles[idx].name = name;
+      roles[idx].desc = desc;
+    }
+  }else{
+    roles.push({
+      id: 'r'+Date.now(),
+      name: name,
+      desc: desc,
+      status: true,
+      createdAt: fmtTime(new Date()),
+      permissions: []
+    });
+  }
+  
+  ls(SK_ROLES, roles);
+  closeM('modal-role-edit');
+  render();
+  showMsg('保存成功','s');
+}
+
+function filterRoles(){
+  render();
+}
+
+function resetRoleFilter(){
+  const els = ['um-f-role','um-f-role-status'];
+  els.forEach(id=>{const el=g(id);if(el)el.value='';});
+  render();
+}
+
+// 打开角色权限管理弹窗
+function openRolePerm(id){
+  currentPermRoleId = id;
+  const roles = ls(SK_ROLES);
+  const role = roles.find(r=>r.id===id);
+  
+  if(role){
+    g('role-perm-current').textContent = '当前角色: ' + role.name;
+    
+    // 重置所有复选框
+    document.querySelectorAll('.perm-item-check').forEach(cb=>cb.checked=false);
+    document.querySelectorAll('.perm-group-check').forEach(cb=>cb.checked=false);
+    g('perm-select-all').checked = false;
+    
+    // 设置已有权限
+    const perms = role.permissions || [];
+    perms.forEach(p=>{
+      const cb = document.querySelector(`.perm-item-check[data-perm="${p}"]`);
+      if(cb) cb.checked = true;
+      const gcb = document.querySelector(`.perm-group-check[data-group="${p}"]`);
+      if(gcb) gcb.checked = true;
+    });
+    
+    // 检查分组状态
+    ['data','system'].forEach(group=>{
+      const items = document.querySelectorAll(`.perm-item-check[data-group="${group}"]`);
+      const gcb = document.querySelector(`.perm-group-check[data-group="${group}"]`);
+      if(gcb){
+        const allChecked = Array.from(items).every(cb=>cb.checked);
+        gcb.checked = allChecked;
+      }
+    });
+  }
+  
+  g('modal-role-perm').classList.add('show');
+}
+
+function toggleAllPerms(el){
+  const checked = el.checked;
+  document.querySelectorAll('.perm-item-check').forEach(cb=>cb.checked=checked);
+  document.querySelectorAll('.perm-group-check').forEach(cb=>cb.checked=checked);
+}
+
+function togglePermGroup(group){
+  const gcb = document.querySelector(`.perm-group-check[data-group="${group}"]`);
+  const checked = gcb ? gcb.checked : false;
+  document.querySelectorAll(`.perm-item-check[data-group="${group}"]`).forEach(cb=>cb.checked=checked);
+}
+
+function saveRolePerm(){
+  const roles = ls(SK_ROLES);
+  const idx = roles.findIndex(r=>r.id===currentPermRoleId);
+  
+  if(idx>=0){
+    const perms = [];
+    document.querySelectorAll('.perm-group-check:checked').forEach(cb=>{
+      perms.push(cb.dataset.group);
+    });
+    document.querySelectorAll('.perm-item-check:checked').forEach(cb=>{
+      if(!perms.includes(cb.dataset.perm)){
+        perms.push(cb.dataset.perm);
+      }
+    });
+    roles[idx].permissions = perms;
+    ls(SK_ROLES, roles);
+  }
+  
+  closeM('modal-role-perm');
+  showMsg('权限已保存','s');
 }
 
 // ========== 启动 ==========

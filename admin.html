@@ -349,6 +349,18 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
 /* 底部按钮栏 */
 .np-footer{display:flex;align-items:center;gap:12px;padding:20px 0;border-top:1px solid #f0f0f0;margin-top:32px;position:sticky;bottom:0;background:var(--bg);z-index:10}
 .np-footer .btn{padding:10px 28px;font-size:14px;font-weight:600}
+
+/* ========== 用户管理Toggle开关 ========== */
+.um-toggle{position:relative;width:44px;height:24px;background:#ccc;border-radius:12px;cursor:pointer;transition:all .2s;flex-shrink:0}
+.um-toggle.on{background:#00bfa5}
+.um-toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.um-toggle.on::after{left:22px}
+
+/* ========== 用户管理页面Tab ========== */
+.um-tabs{display:flex;gap:4px;margin-bottom:20px}
+.um-tab{padding:8px 20px;border-radius:8px;font-size:13px;cursor:pointer;transition:all .2s;background:transparent;color:var(--text-gray);font-weight:500;border:none}
+.um-tab:hover{background:rgba(0,0,0,.05)}
+.um-tab.active{background:var(--teal);color:#fff;font-weight:600}
 </style>
 </head>
 <body>
@@ -382,7 +394,7 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
     <div class="header-icon" onclick="refreshAll()" title="刷新">🔄</div>
     <div class="header-icon" title="通知">🔔</div>
     <div class="header-icon" title="消息">💬</div>
-    <div class="header-user">
+    <div class="header-user" onclick="goMenu('userMgr')" style="cursor:pointer">
       <div class="header-avatar">管</div>
       <div>
         <div class="header-username" id="currentUser">admin</div>
@@ -559,6 +571,111 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
   </div>
   <div class="modal-ft" style="justify-content:center">
     <button class="btn btn-dark" onclick="closeM('modal-save-success')" style="min-width:100px">确定</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== 弹窗：新增/编辑用户 ===== -->
+<div class="modal-ov" id="modal-user-edit">
+<div class="modal" style="max-width:560px">
+  <div class="modal-hd"><div class="modal-tt" id="user-edit-title">新增</div><button class="modal-cl" onclick="closeM('modal-user-edit')">✕</button></div>
+  <div class="modal-bd">
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 头像</label>
+      <div class="np-img-upload" style="width:80px;height:80px" id="user-avatar-upload" onclick="document.getElementById('user-avatar-file').click()">
+        <div style="font-size:24px;color:#ccc" id="user-avatar-placeholder">☁</div>
+        <div class="np-img-upload-text" id="user-avatar-text">请上传头像</div>
+      </div>
+      <input type="file" id="user-avatar-file" accept="image/*" style="display:none" onchange="uploadUserAvatar(this)">
+      <div style="font-size:11px;color:#999;margin-top:4px">建议尺寸大小小于10M</div>
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 姓名</label>
+      <input class="fctl" id="user-edit-name" placeholder="请输入姓名">
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 用户名</label>
+      <input class="fctl" id="user-edit-username" placeholder="请输入用户名">
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 手机号</label>
+      <input class="fctl" id="user-edit-phone" placeholder="请输入手机号" style="background:#f5f5f5">
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 密码</label>
+      <div style="position:relative">
+        <input class="fctl" id="user-edit-pwd" type="password" placeholder="请输入密码" value="••••••••••••••••">
+        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999" onclick="togglePwdVisible()">👁</span>
+      </div>
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 邮箱</label>
+      <input class="fctl" id="user-edit-email" placeholder="请输入邮箱">
+    </div>
+  </div>
+  <div class="modal-ft">
+    <button class="btn btn-outline" onclick="closeM('modal-user-edit')">取消</button>
+    <button class="btn btn-primary" onclick="saveUserEdit()">确定</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== 弹窗：角色权限管理 ===== -->
+<div class="modal-ov" id="modal-role-perm">
+<div class="modal" style="max-width:560px">
+  <div class="modal-hd"><div class="modal-tt">权限管理</div><button class="modal-cl" onclick="closeM('modal-role-perm')">✕</button></div>
+  <div class="modal-bd">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <label class="checkbox-item" style="margin:0"><input type="checkbox" id="perm-select-all" onchange="toggleAllPerms(this)"><span>全选</span></label>
+      <span style="color:#1565c0;font-size:13px" id="role-perm-current">当前角色: 管理员</span>
+    </div>
+    <div class="perm-check-group">
+      <div style="margin-bottom:16px">
+        <label class="checkbox-item"><input type="checkbox" class="perm-group-check" data-group="data" onchange="togglePermGroup('data')"><span style="font-weight:600">数据管理</span></label>
+        <div style="margin-left:28px;margin-top:8px;display:flex;flex-wrap:wrap;gap:16px">
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="banner"><span>Banner管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="activity"><span>活动管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="official"><span>官方活动</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="team"><span>队伍管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="reward"><span>实物奖励</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="stats" checked><span style="color:#1565c0">数据统计</span></label>
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="checkbox-item"><input type="checkbox" class="perm-group-check" data-group="system" onchange="togglePermGroup('system')"><span style="font-weight:600">系统管理</span></label>
+        <div style="margin-left:28px;margin-top:8px;display:flex;flex-wrap:wrap;gap:16px">
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="user"><span>用户管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="role"><span>角色管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="message"><span>消息管理</span></label>
+          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="notice"><span>公告管理</span></label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-ft">
+    <button class="btn btn-outline" onclick="closeM('modal-role-perm')">取 消</button>
+    <button class="btn btn-primary" onclick="saveRolePerm()">确 定</button>
+  </div>
+</div>
+</div>
+
+<!-- ===== 弹窗：新增/编辑角色 ===== -->
+<div class="modal-ov" id="modal-role-edit">
+<div class="modal" style="max-width:420px">
+  <div class="modal-hd"><div class="modal-tt" id="role-edit-title">新增角色</div><button class="modal-cl" onclick="closeM('modal-role-edit')">✕</button></div>
+  <div class="modal-bd">
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 角色名称</label>
+      <input class="fctl" id="role-edit-name" placeholder="请输入角色名称">
+    </div>
+    <div class="frow">
+      <label class="flbl">角色描述</label>
+      <textarea class="fctl" id="role-edit-desc" rows="3" placeholder="请输入角色描述"></textarea>
+    </div>
+  </div>
+  <div class="modal-ft">
+    <button class="btn btn-outline" onclick="closeM('modal-role-edit')">取消</button>
+    <button class="btn btn-primary" onclick="saveRoleEdit()">确定</button>
   </div>
 </div>
 </div>
