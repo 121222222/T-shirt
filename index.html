@@ -40,6 +40,7 @@ html, body {
   background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 800"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="%232d5016"/><stop offset="0.4" stop-color="%234a7c28" stop-opacity="0.8"/><stop offset="0.7" stop-color="%23c4a265"/><stop offset="1" stop-color="%23d4b980"/></linearGradient></defs><rect fill="url(%23g)" width="400" height="800"/></svg>') center/cover;
   opacity: 0.3;
 }
+#page-welcome.custom-bg::before { display: none; }
 .welcome-content { position: relative; z-index: 2; padding: 60px 30px; }
 .welcome-year { font-size: 72px; font-weight: 900; line-height: 1; letter-spacing: -2px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
 .welcome-title { font-size: 48px; font-weight: 900; line-height: 1.2; margin-top: 5px; text-shadow: 0 4px 20px rgba(0,0,0,0.3); }
@@ -977,16 +978,14 @@ const ADMIN_PAGE_MAP = {
   0: 'page-welcome',     // 首页（欢迎页）
   1: 'page-welcome',     // 首页-2（相同欢迎页）
   2: 'modal-notice',     // 温馨提示弹窗
-  3: 'modal-notice',     // 温馨提示-2
-  4: 'modal-notice',     // 截止提醒（也用温馨提示弹窗）
-  5: 'page-style',       // 选择款式
-  6: 'page-size',        // 选择尺码
-  7: 'page-address',     // 选择地址
-  8: 'page-confirm',     // 选款确认
-  9: 'page-confirm',     // 选款确认-2（已到期）
-  10: 'page-success',    // 分享页/提交成功
-  11: 'page-success',    // 结束页
-  12: 'page-welcome'     // 白名单页
+  3: 'page-style',       // 选择款式
+  4: 'page-size',        // 选择尺码
+  5: 'page-address',     // 选择地址
+  6: 'page-confirm',     // 选款确认
+  7: 'page-confirm',     // 选款确认-2（已到期）
+  8: 'page-success',     // 分享页/提交成功
+  9: 'page-success',     // 结束页
+  10: 'page-welcome'     // 白名单页
 };
 
 let isAdminPreview = false;
@@ -1034,17 +1033,17 @@ window.addEventListener('message', function(e) {
     }
 
     // 如果是选择款式页，重新渲染款式列表
-    if (pageIdx === 5) {
+    if (pageIdx === 3) {
       renderStyles();
     }
 
     // 如果是选择尺码页，需要先渲染尺码数据
-    if (pageIdx === 6) {
+    if (pageIdx === 4) {
       renderSizes('male');
     }
 
     // 如果是确认页，填充演示数据
-    if (pageIdx === 8 || pageIdx === 9) {
+    if (pageIdx === 6 || pageIdx === 7) {
       selection.styleName = selection.styleName || '男款-白色';
       selection.size = selection.size || 'L';
       selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
@@ -1052,7 +1051,7 @@ window.addEventListener('message', function(e) {
     }
 
     // 如果是成功页，填充演示数据
-    if (pageIdx === 10 || pageIdx === 11) {
+    if (pageIdx === 8 || pageIdx === 9) {
       selection.styleName = selection.styleName || '男款-白色';
       selection.size = selection.size || 'L';
       selection.addressName = selection.addressName || '深圳-腾讯滨海大厦';
@@ -1130,7 +1129,7 @@ function applyAdminConfig(pageIdx) {
   const pageData = adminH5Data.pages && adminH5Data.pages[pageIdx];
 
   // 更新欢迎页标题
-  if (pageIdx === 0 || pageIdx === 1 || pageIdx === 12) {
+  if (pageIdx === 0 || pageIdx === 1 || pageIdx === 10) {
     const yearEl = document.querySelector('.welcome-year');
     const titleEl = document.querySelector('.welcome-title');
     const subtitleEl = document.querySelector('.welcome-subtitle');
@@ -1152,23 +1151,89 @@ function applyAdminConfig(pageIdx) {
       if (yearEl && pageData.texts[0]) yearEl.textContent = pageData.texts[0];
       if (titleEl && pageData.texts[1]) titleEl.textContent = pageData.texts[1];
     }
+    
+    // 应用首页背景图片
+    const welcomePage = document.getElementById('page-welcome');
+    if (welcomePage && pageData && pageData.bgImg) {
+      welcomePage.style.background = `url(${pageData.bgImg}) center/cover no-repeat`;
+      // 移除::before伪元素的影响
+      welcomePage.classList.add('custom-bg');
+    }
+    
+    // 应用logo图片
+    const logoEl = document.querySelector('.welcome-logo');
+    if (logoEl && pageData && pageData.logoImg && !pageData.toggles?.logoHide) {
+      logoEl.innerHTML = `<img src="${pageData.logoImg}" style="max-width:190px;max-height:100px;" alt="logo">`;
+    } else if (logoEl && pageData && pageData.toggles?.logoHide) {
+      logoEl.style.display = 'none';
+    }
+    
+    // 应用loading配置（首页pageIdx=0时）
+    if (pageIdx === 0 && pageData) {
+      const loadingPage = document.getElementById('page-loading');
+      const loadingSpinner = document.querySelector('.spinner-icon');
+      const loadingPercent = document.getElementById('loading-percent');
+      
+      // 应用loading图片
+      if (loadingSpinner && pageData.loadingImg && !pageData.toggles?.loadingHide) {
+        loadingSpinner.innerHTML = `<img src="${pageData.loadingImg}" style="width:100px;height:100px;" alt="loading">`;
+        loadingSpinner.style.animation = 'none';
+        loadingSpinner.style.fontSize = 'inherit';
+      }
+      
+      // 应用百分比文字颜色
+      if (loadingPercent && pageData.percentColor) {
+        loadingPercent.style.color = pageData.percentColor;
+      }
+      
+      // 应用loading页面背景（与首页相同）
+      if (loadingPage && pageData.bgImg) {
+        loadingPage.style.background = `url(${pageData.bgImg}) center/cover no-repeat`;
+      }
+    }
   }
 
   // 更新温馨提示弹窗
-  if (pageIdx >= 2 && pageIdx <= 4) {
+  if (pageIdx === 2) {
     const modalTitle = document.querySelector('#modal-notice .modal-title');
     const modalDesc = document.querySelector('#modal-notice .modal-desc');
     const modalBtn = document.querySelector('#modal-notice .modal-btn');
+    const modalContent = document.querySelector('#modal-notice .modal-content');
     
     if (pageData && pageData.texts) {
       if (modalTitle && pageData.texts[0]) modalTitle.textContent = pageData.texts[0];
       if (modalDesc && pageData.texts[1]) modalDesc.textContent = pageData.texts[1];
       if (modalBtn && pageData.texts[2]) modalBtn.textContent = pageData.texts[2];
     }
+    
+    // 应用颜色
+    if (pageData && pageData.toggles) {
+      // 标题颜色
+      if (modalTitle && pageData.toggles.text0_color) {
+        modalTitle.style.color = pageData.toggles.text0_color;
+      }
+      // 描述文字颜色
+      if (modalDesc && pageData.toggles.text1_color) {
+        modalDesc.style.color = pageData.toggles.text1_color;
+      }
+      // 按钮文字颜色
+      if (modalBtn && pageData.toggles.text2_color) {
+        modalBtn.style.color = pageData.toggles.text2_color;
+      }
+      // 按钮背景颜色
+      if (modalBtn && pageData.toggles.text2_btnColorVal) {
+        modalBtn.style.background = pageData.toggles.text2_btnColorVal;
+      }
+    }
+    
+    // 应用背景图片
+    if (modalContent && pageData && pageData.bgImg) {
+      modalContent.style.background = `url(${pageData.bgImg}) center/cover no-repeat`;
+    }
   }
 
   // 更新选择款式页
-  if (pageIdx === 5) {
+  if (pageIdx === 3) {
     const stepLabel = document.querySelector('#page-style .step-label');
     const stepDesc = document.querySelector('#page-style .step-desc');
     
@@ -1206,7 +1271,7 @@ function applyAdminConfig(pageIdx) {
   }
 
   // 更新确认页
-  if (pageIdx === 8 || pageIdx === 9) {
+  if (pageIdx === 6 || pageIdx === 7) {
     const confirmStep = document.querySelector('#page-confirm .confirm-step');
     const confirmHint = document.querySelector('#page-confirm .confirm-hint');
     
@@ -1227,8 +1292,8 @@ function applyAdminConfig(pageIdx) {
     }
   }
 
-  // 应用背景图/背景色
-  if (pageData) {
+  // 应用背景图/背景色（通用逻辑，针对非欢迎页）
+  if (pageData && pageIdx !== 0 && pageIdx !== 1 && pageIdx !== 10) {
     const currentPage = document.getElementById(ADMIN_PAGE_MAP[pageIdx]);
     if (currentPage) {
       if (pageData.bgImg) {

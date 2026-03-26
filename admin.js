@@ -63,7 +63,7 @@ function initDemo(){
   }
   if(!localStorage.getItem(SK.proj)){
     // 构建默认H5数据（对应index.html前端内容）
-    const defaultH5Pages = Array.from({length:13},()=>({
+    const defaultH5Pages = Array.from({length:11},()=>({
       bgImg:'', bgColor:'#000000',
       loadingImg:'', loadingHide:false,
       logoImg:'', logoHide:true,
@@ -78,13 +78,13 @@ function initDemo(){
     // 温馨提示
     defaultH5Pages[2].texts=['温馨提示','本次选款选码截止至2026年5月30日18:00，逾期将无法修改。未成功提交的同学后续不会安排补发。请在规定时间内选择最适合你的文化衫吧~','我知道了'];
     // 选择款式标题
-    defaultH5Pages[5].texts=['Step1：选择款式','经典T恤，分男、女款式，多种颜色可挑选'];
+    defaultH5Pages[3].texts=['Step1：选择款式','经典T恤，分男、女款式，多种颜色可挑选'];
     // 选择尺码标题
-    defaultH5Pages[6].texts=['Step2：选择尺码','','确定尺码'];
+    defaultH5Pages[4].texts=['Step2：选择尺码','','确定尺码'];
     // 选择地址
-    defaultH5Pages[7].texts=['Step3：选择地址','','办公地点','请勾选办公地点所在城市和大厦','备注','如果没有找到您所在的地区和办公大厦，请在备注栏手动输入，如：深圳 金地威新','注意事项','文化衫选款选码截止至2026年5月30日18:00，逾期无法修改，未成功提交的同学后续不会安排补发。','提交本次选码结果'];
+    defaultH5Pages[5].texts=['Step3：选择地址','','办公地点','请勾选办公地点所在城市和大厦','备注','如果没有找到您所在的地区和办公大厦，请在备注栏手动输入，如：深圳 金地威新','注意事项','文化衫选款选码截止至2026年5月30日18:00，逾期无法修改，未成功提交的同学后续不会安排补发。','提交本次选码结果'];
     // 选款确认
-    defaultH5Pages[8].texts=['Step4：选款选码确认','在5月30日18:00前，请务必核对填写信息并确认提交成功','重新选择','生成分享图'];
+    defaultH5Pages[6].texts=['Step4：选款选码确认','在5月30日18:00前，请务必核对填写信息并确认提交成功','重新选择','生成分享图'];
 
     const defaultH5Data = {
       h5Title:'2026TEG夏季文化衫',
@@ -112,7 +112,7 @@ function initDemo(){
     let changed=false;
     existProjs.forEach(p=>{
       if(p.id==='default'&&!p.h5Data){
-        const defaultH5Pages2 = Array.from({length:13},()=>({
+        const defaultH5Pages2 = Array.from({length:11},()=>({
           bgImg:'', bgColor:'#000000',
           loadingImg:'', loadingHide:false,
           logoImg:'', logoHide:true,
@@ -124,10 +124,10 @@ function initDemo(){
         }));
         defaultH5Pages2[0].texts=['2026TEG','夏季文化衫'];
         defaultH5Pages2[2].texts=['温馨提示','本次选款选码截止至2026年5月30日18:00，逾期将无法修改。','我知道了'];
-        defaultH5Pages2[5].texts=['Step1：选择款式','经典T恤，分男、女款式'];
-        defaultH5Pages2[6].texts=['Step2：选择尺码','','确定尺码'];
-        defaultH5Pages2[7].texts=['Step3：选择地址','','办公地点','请勾选办公地点所在城市和大厦','备注','如果没有找到您所在的地区和办公大厦，请在备注栏手动输入','注意事项','文化衫选款选码截止至2026年5月30日18:00','提交本次选码结果'];
-        defaultH5Pages2[8].texts=['Step4：选款选码确认','在5月30日18:00前请务必核对','重新选择','生成分享图'];
+        defaultH5Pages2[3].texts=['Step1：选择款式','经典T恤，分男、女款式'];
+        defaultH5Pages2[4].texts=['Step2：选择尺码','','确定尺码'];
+        defaultH5Pages2[5].texts=['Step3：选择地址','','办公地点','请勾选办公地点所在城市和大厦','备注','如果没有找到您所在的地区和办公大厦，请在备注栏手动输入','注意事项','文化衫选款选码截止至2026年5月30日18:00','提交本次选码结果'];
+        defaultH5Pages2[6].texts=['Step4：选款选码确认','在5月30日18:00前请务必核对','重新选择','生成分享图'];
         p.h5Data={
           h5Title:p.title||'2026TEG夏季文化衫',
           h5Subtitle:p.desc||'SUMMER COLLECTION',
@@ -331,21 +331,19 @@ let npData = {
 let npCurPage = 0; // 当前选中的H5页面索引(0-12)
 let editingProjId = ''; // 正在编辑的项目ID（空=新建模式）
 
-// 13个H5页面定义
+// 11个H5页面定义（合并温馨提示相关页面）
 const H5_PAGES = [
   {id:'p1', name:'首页', desc:'背景图片设置'},
   {id:'p2', name:'首页-2', desc:'替换背景图片'},
-  {id:'p3', name:'温馨提示', desc:'替换背景色+文字'},
-  {id:'p4', name:'温馨提示-2', desc:'替换图片+文字'},
-  {id:'p5', name:'截止提醒', desc:'替换背景色+文字'},
-  {id:'p6', name:'选择款式', desc:'物料配置+标题'},
-  {id:'p7', name:'选择尺码', desc:'尺码导入+标题'},
-  {id:'p8', name:'选择地址', desc:'地址+备注+注意事项'},
-  {id:'p9', name:'选款确认', desc:'信息配置'},
-  {id:'p10', name:'选款确认-2', desc:'已到期状态'},
-  {id:'p11', name:'分享页', desc:'主背景+图片+logo+文字'},
-  {id:'p12', name:'结束页', desc:'替换背景色+文字'},
-  {id:'p13', name:'白名单页', desc:'访问权限+背景图+文字'}
+  {id:'p3', name:'温馨提示', desc:'替换背景图片+文字'},
+  {id:'p4', name:'选择款式', desc:'物料配置+标题'},
+  {id:'p5', name:'选择尺码', desc:'尺码导入+标题'},
+  {id:'p6', name:'选择地址', desc:'地址+备注+注意事项'},
+  {id:'p7', name:'选款确认', desc:'信息配置'},
+  {id:'p8', name:'选款确认-2', desc:'已到期状态'},
+  {id:'p9', name:'分享页', desc:'主背景+图片+logo+文字'},
+  {id:'p10', name:'结束页', desc:'替换背景色+文字'},
+  {id:'p11', name:'白名单页', desc:'访问权限+背景图+文字'}
 ];
 
 function initNpData(){
@@ -575,21 +573,12 @@ function renderPhonePreview(pageIdx){
       <div style="font-size:18px;font-weight:700">${npData.h5Title||'项目标题'}</div>
       <div style="margin-top:20px;padding:12px 24px;background:rgba(255,255,255,.2);border-radius:24px;font-size:13px">选择款式及尺码</div>
     </div>`,
-    2:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
-      <div style="font-size:16px;font-weight:700;color:#ff9800">温馨提示</div>
-      <div style="font-size:12px;margin-top:16px;line-height:1.8;opacity:.9">本次文化衫填写截止2025年9月23日18:00，<br>期间每个同学填写次数不限，后台以大家最后一次成功提交数据为准。</div>
-      <div style="margin-top:24px;padding:10px 32px;background:#333;border-radius:24px;font-size:13px">我知道了</div>
+    2:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:(pd.bgColor||'#000')};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+      <div style="font-size:16px;font-weight:700;color:${pd.toggles.text0_color||'#ff9800'}">${pd.texts[0]||'温馨提示'}</div>
+      <div style="font-size:12px;margin-top:16px;line-height:1.8;color:${pd.toggles.text1_color||'#ffffff'}">${pd.texts[1]||'本次文化衫填写截止2025年9月23日18:00，期间每个同学填写次数不限，后台以大家最后一次成功提交数据为准。'}</div>
+      <div style="margin-top:24px;padding:10px 32px;background:${pd.toggles.text2_btnColorVal||'#333333'};border-radius:24px;font-size:13px;color:${pd.toggles.text2_color||'#ffffff'}">${pd.texts[2]||'我知道了'}</div>
     </div>`,
-    3:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e,#283593)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
-      <div style="font-size:16px;font-weight:700;color:#ff9800">温馨提示</div>
-      <div style="font-size:11px;margin-top:16px;line-height:1.8">本次文化衫填写截止...</div>
-      <div style="margin-top:24px;padding:10px 32px;background:#333;border-radius:24px;font-size:13px">我知道了</div>
-    </div>`,
-    4:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
-      <div style="font-size:14px;line-height:1.8">本次选款选码截止至2025年9月23日18:00，<br>逾期将无法修改。</div>
-      <div style="margin-top:24px;padding:10px 32px;background:#fff;color:#000;border-radius:24px;font-size:13px">我知道了</div>
-    </div>`,
-    5:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+    3:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
       <div style="font-weight:700;font-size:14px">Step1：选择款式</div>
       <div style="font-size:11px;color:#666;margin-top:4px">经典哈灵顿领夹克，分男、女款式</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
@@ -600,7 +589,7 @@ function renderPhonePreview(pageIdx){
       </div>
       <div style="margin-top:16px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">确定款式</div>
     </div>`,
-    6:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+    4:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
       <div style="font-weight:700;font-size:14px">Step2：选择尺码</div>
       <div style="font-size:11px;color:#1565c0;margin-top:4px">已选择：周年T恤-白色</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px">
@@ -608,7 +597,7 @@ function renderPhonePreview(pageIdx){
       </div>
       <div style="margin-top:20px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">确定尺码</div>
     </div>`,
-    7:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
+    5:()=>`<div style="height:100%;background:#fff;padding:16px;overflow-y:auto">
       <div style="font-weight:700;font-size:14px">Step3：选择地址</div>
       <div style="margin-top:12px;font-size:12px"><b>办公地点：</b><span style="color:#999">选择地址 ▾</span></div>
       <div style="font-size:10px;color:#999;margin-top:4px">请勾选办公地点所在城市和大厦</div>
@@ -616,7 +605,7 @@ function renderPhonePreview(pageIdx){
       <div style="margin-top:12px"><b style="font-size:12px">注意事项</b><div style="font-size:10px;color:#666;margin-top:4px;line-height:1.6">文化衫选款选码截止至...</div></div>
       <div style="margin-top:16px;text-align:center;padding:10px;background:#333;color:#fff;border-radius:24px;font-size:13px">提交本次选码结果</div>
     </div>`,
-    8:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
+    6:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
       <div style="font-weight:700;font-size:14px">Step4：选款选码确认</div>
       <div style="font-size:11px;color:#666;margin-top:4px">在9月23日18:00前，请务必核对...</div>
       <div style="background:#fff;border-radius:8px;margin-top:12px;padding:12px;text-align:center">
@@ -628,7 +617,7 @@ function renderPhonePreview(pageIdx){
         <div style="flex:1;padding:8px;background:#333;color:#fff;border-radius:8px;text-align:center;font-size:11px">重新选择</div>
       </div>
     </div>`,
-    9:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
+    7:()=>`<div style="height:100%;background:#f5f5f5;padding:16px;overflow-y:auto">
       <div style="font-weight:700;font-size:14px">Step4：选款选码确认</div>
       <div style="font-size:11px;color:#666;margin-top:4px">已到期状态</div>
       <div style="background:#fff;border-radius:8px;margin-top:12px;padding:12px;text-align:center">
@@ -639,7 +628,7 @@ function renderPhonePreview(pageIdx){
         <div style="flex:1;padding:8px;background:#ddd;color:#999;border-radius:8px;text-align:center;font-size:11px">已到期，不可修改</div>
       </div>
     </div>`,
-    10:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#2e7d32,#4caf50)'};display:flex;flex-direction:column;justify-content:space-between;padding:20px;color:#fff">
+    8:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#2e7d32,#4caf50)'};display:flex;flex-direction:column;justify-content:space-between;padding:20px;color:#fff">
       <div style="font-size:11px;text-align:center">13th ANNIVERSARY</div>
       <div style="text-align:center">
         <div style="height:100px;background:rgba(255,255,255,.1);border-radius:8px;margin-bottom:12px"></div>
@@ -651,11 +640,11 @@ function renderPhonePreview(pageIdx){
         <div style="margin-top:8px;padding:8px 20px;background:rgba(255,255,255,.2);border-radius:20px;font-size:12px">返回上一页</div>
       </div>
     </div>`,
-    11:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+    9:()=>`<div style="height:100%;background:${pd.bgColor||'#000'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
       <div style="font-size:16px;font-weight:700">选款选码已结束</div>
       <div style="font-size:11px;margin-top:16px;line-height:1.8;opacity:.8">本次文化衫已在2025年9月23日18:00截止选款选码...</div>
     </div>`,
-    12:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#ff8a00,#e52e71)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
+    10:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#ff8a00,#e52e71)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:24px;text-align:center">
       <div style="font-size:13px;line-height:1.8">亲，你不在本次活动内<br>如对本次文化衫有任何建议反馈<br>可以企业微信：他二哥<br>感谢大家的支持与理解！</div>
     </div>`
   };
@@ -730,38 +719,20 @@ function renderPageConfig(pageIdx){
         ${textBlock('替换文字',pd.texts[1]||'',10,'text1',true,true)}
         ${musicBlock()}`;
 
-    case 2: // 温馨提示 - 替换背景色+替换文字
+    case 2: // 温馨提示 - 替换背景图片+替换文字
       return `
-        <div class="np-field-row"><span style="font-size:14px;font-weight:600">替换背景色</span> <span style="font-size:12px;margin-left:8px">背景颜色</span> <input type="color" class="np-color-dot" value="${pd.bgColor||'#000000'}" onchange="npData.pages[${pageIdx}].bgColor=this.value;npSyncConfigToIframe()"></div>
-        ${textBlock('温馨提示',pd.texts[0]||'温馨提示',20,'text0',false,false)}
+        ${imgBlock('np-p3-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
+        ${textBlock('替换文字',pd.texts[0]||'温馨提示',20,'text0',true,true)}
         <div class="np-field-row">
           <label class="np-field-label">替换文字</label>
           <textarea class="np-field-textarea" rows="3" maxlength="80" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
-          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value;npSyncConfigToIframe()">
+          <span class="np-char-count">${(pd.texts[1]||'').length}/80</span>
+          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#ffffff'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value;npSyncConfigToIframe()">
         </div>
         ${textBlock('我知道了',pd.texts[2]||'我知道了',10,'text2',true,true)}
         ${musicBlock()}`;
 
-    case 3: // 温馨提示-2 - 替换背景图片+替换图片+文字+音乐
-      return `
-        ${imgBlock('np-p4-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
-        ${imgBlock('np-p4-img1','替换图片','尺寸：750*高度不限制　格式：png/jpg 且不超过2M',pd.images[0]||'','images_0')}
-        ${textBlock('我知道了',pd.texts[0]||'我知道了',10,'text0',true,true)}
-        ${musicBlock()}`;
-
-    case 4: // 截止提醒 - 替换背景色+替换文字
-      return `
-        <div class="np-field-row"><span style="font-size:14px;font-weight:600">替换背景色</span> <span style="font-size:12px;margin-left:8px">背景颜色</span> <input type="color" class="np-color-dot" value="${pd.bgColor||'#000000'}" onchange="npData.pages[${pageIdx}].bgColor=this.value;npSyncConfigToIframe()"></div>
-        ${textBlock('选款选码已结束',pd.texts[0]||'',20,'text0',false,true)}
-        <div class="np-field-row">
-          <label class="np-field-label">替换文字</label>
-          <textarea class="np-field-textarea" rows="3" maxlength="80" oninput="npPageTextChange(${pageIdx},'text1',this.value)">${pd.texts[1]||''}</textarea>
-          <span style="font-size:12px">文本颜色</span> <input type="color" class="np-color-dot" value="${pd.toggles.text1_color||'#000000'}" onchange="npData.pages[${pageIdx}].toggles.text1_color=this.value;npSyncConfigToIframe()">
-        </div>
-        ${textBlock('我知道了',pd.texts[2]||'我知道了',10,'text2',true,true)}
-        ${musicBlock()}`;
-
-    case 5: // 选择款式 - 替换背景图片+标题配置+物料表格
+    case 3: // 选择款式 - 替换背景图片+标题配置+物料表格
       return `
         ${imgBlock('np-p6-bg','替换背景图片','尺寸：750*1544PX　格式：png/jpg 且不超过2M',pd.bgImg,'bgImg')}
         <div class="np-config-section">
@@ -783,7 +754,7 @@ function renderPageConfig(pageIdx){
         </div>
         ${renderMaterialsTable()}`;
 
-    case 6: // 选择尺码 - 隐藏页面+背景+标题+尺码导入+按钮文字
+    case 4: // 选择尺码 - 隐藏页面+背景+标题+尺码导入+按钮文字
       return `
         <div class="np-field-row"><span style="font-size:14px;font-weight:600">隐藏页面</span> <div class="np-toggle ${pd.hidePage?'on':''}" onclick="npData.pages[${pageIdx}].hidePage=!npData.pages[${pageIdx}].hidePage;renderNewProject()"></div></div>
         <div style="font-size:11px;color:#999;margin-bottom:16px">如果打开隐藏按钮，表示本页面不在H5中呈现。</div>
@@ -815,7 +786,7 @@ function renderPageConfig(pageIdx){
         </div>
         ${textBlock('确定尺码',pd.texts[2]||'确定尺码',10,'text2',true,true)}`;
 
-    case 7: // 选择地址 - 主文案+副文案+替换文字+备注信息+注意事项配置
+    case 5: // 选择地址 - 主文案+副文案+替换文字+备注信息+注意事项配置
       return `
         <div class="np-config-section">
           <div class="np-field-row">
@@ -875,7 +846,7 @@ function renderPageConfig(pageIdx){
           ${textBlock('提交本次选码结果',pd.texts[8]||'提交本次选码结果',10,'text8',true,true)}
         </div>`;
 
-    case 8: // 选款确认 - 主文案+副文案+信息配置+图片+颜色+文字
+    case 6: // 选款确认 - 主文案+副文案+信息配置+图片+颜色+文字
       return `
         <div class="np-field-row">
           <label class="np-field-label">主文案</label>
@@ -931,7 +902,7 @@ function renderPageConfig(pageIdx){
         ${textBlock('我知道了',pd.texts[2]||'我知道了',6,'text2',true,true)}
         ${musicBlock()}`;
 
-    case 12: // 白名单页 - 访问权限开关+背景图+文字+音乐
+    case 10: // 白名单页 - 访问权限开关+背景图+文字+音乐
       return `
         <div class="np-field-row"><span style="font-size:14px;font-weight:600">访问权限</span> <div class="np-toggle ${pd.accessControl?'on':''}" onclick="npData.pages[${pageIdx}].accessControl=!npData.pages[${pageIdx}].accessControl;renderNewProject()"></div></div>
         <div style="font-size:11px;color:#999;margin-bottom:16px;line-height:1.6">开启后，只有您导入的名单成员才有权限访问该H5；<br>关闭则默认为全员开放，关闭时本页内容不用编辑。</div>
@@ -1035,6 +1006,8 @@ function npPageImgUpload(input,pageIdx,field){
       npData.pages[pageIdx][field]=e.target.result;
     }
     renderNewProject();
+    // 同步配置到iframe实时预览
+    npSyncConfigToIframe();
   };
   reader.readAsDataURL(file);
 }
@@ -1102,7 +1075,95 @@ function npPrevStep(){
 }
 
 function npPreviewH5(){
-  showMsg('预览H5功能演示中','i');
+  // 生成预览H5的URL
+  const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^\/]*$/, '/');
+  const previewUrl = baseUrl + 'index.html';
+  
+  // 显示二维码弹窗
+  const modal = g('modal-preview-qr');
+  if(modal){
+    // 更新二维码内容
+    generateQRCode(previewUrl);
+    g('preview-qr-url').textContent = previewUrl;
+    g('preview-qr-url').href = previewUrl;
+    
+    // 检测是否为本地文件，显示提示
+    const localTip = g('preview-qr-local-tip');
+    if(localTip){
+      if(previewUrl.startsWith('file://') || window.location.protocol === 'file:'){
+        localTip.style.display = 'block';
+      }else{
+        localTip.style.display = 'none';
+      }
+    }
+    
+    modal.classList.add('show');
+  }
+}
+
+// 生成二维码（使用qrcode.js库生成真正可扫描的二维码）
+function generateQRCode(url){
+  const container = g('preview-qr-container');
+  if(!container) return;
+  
+  // 清空容器
+  container.innerHTML = '';
+  
+  // 使用qrcode.js生成二维码
+  if(typeof QRCode !== 'undefined'){
+    QRCode.toCanvas(url, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      },
+      errorCorrectionLevel: 'M'
+    }, function(error, canvas){
+      if(error){
+        console.error('QR Code generation error:', error);
+        container.innerHTML = '<div style="color:#999;font-size:12px">二维码生成失败</div>';
+        return;
+      }
+      canvas.style.display = 'block';
+      container.appendChild(canvas);
+    });
+  }else{
+    // fallback：如果qrcode.js未加载，显示提示
+    container.innerHTML = '<div style="color:#999;font-size:12px;padding:20px">二维码库加载中...<br>请稍后重试</div>';
+  }
+}
+
+// 复制预览链接
+function copyPreviewUrl(){
+  const url = g('preview-qr-url').textContent;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>showMsg('链接已复制到剪贴板','s')).catch(()=>showMsg('复制失败','e'));
+  }else{
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showMsg('链接已复制到剪贴板','s');
+  }
+}
+
+// 下载二维码图片
+function downloadQRCode(){
+  const container = g('preview-qr-container');
+  const canvas = container ? container.querySelector('canvas') : null;
+  if(!canvas){
+    showMsg('二维码尚未生成','e');
+    return;
+  }
+  const link = document.createElement('a');
+  link.download = '文化衫H5预览二维码.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showMsg('二维码已下载','s');
 }
 
 // ===== 返回项目列表 =====
@@ -1182,7 +1243,8 @@ function npSaveProject(){
 
     ls(SK.proj,projs);
     addLog('project','更新项目：'+npData.h5Title);
-    showMsg('项目已保存','s');
+    // 显示保存成功弹窗，不退出界面
+    g('modal-save-success').classList.add('show');
   }else{
     // 新建模式
     const newId='proj_'+Date.now();
@@ -1206,12 +1268,11 @@ function npSaveProject(){
     });
     ls(SK.proj,projs);
     addLog('project','新建项目：'+npData.h5Title);
-    showMsg('项目创建成功','s');
+    // 新建成功后，切换到编辑模式，便于继续编辑
+    editingProjId=newId;
+    // 显示保存成功弹窗，不退出界面
+    g('modal-save-success').classList.add('show');
   }
-
-  curMenu='projMgr';
-  document.querySelectorAll('.menu-item').forEach(m=>m.classList.toggle('active',m.dataset.p==='projMgr'));
-  render();
 }
 
 // 新建项目-权限用户管理
