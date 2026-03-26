@@ -631,24 +631,16 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
     </div>
     <div class="perm-check-group">
       <div style="margin-bottom:16px">
-        <label class="checkbox-item"><input type="checkbox" class="perm-group-check" data-group="data" onchange="togglePermGroup('data')"><span style="font-weight:600">数据管理</span></label>
-        <div style="margin-left:28px;margin-top:8px;display:flex;flex-wrap:wrap;gap:16px">
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="banner"><span>Banner管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="activity"><span>活动管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="official"><span>官方活动</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="team"><span>队伍管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="reward"><span>实物奖励</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="data" data-perm="stats" checked><span style="color:#1565c0">数据统计</span></label>
-        </div>
+        <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-perm="projMgr"><span>文化衫项目管理</span></label>
       </div>
       <div style="margin-bottom:16px">
-        <label class="checkbox-item"><input type="checkbox" class="perm-group-check" data-group="system" onchange="togglePermGroup('system')"><span style="font-weight:600">系统管理</span></label>
-        <div style="margin-left:28px;margin-top:8px;display:flex;flex-wrap:wrap;gap:16px">
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="user"><span>用户管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="role"><span>角色管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="message"><span>消息管理</span></label>
-          <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-group="system" data-perm="notice"><span>公告管理</span></label>
-        </div>
+        <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-perm="admin"><span>管理员看板</span></label>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-perm="dept"><span>部门看板</span></label>
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="checkbox-item"><input type="checkbox" class="perm-item-check" data-perm="receiver"><span>收货人看板</span></label>
       </div>
     </div>
   </div>
@@ -667,6 +659,13 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
     <div class="frow">
       <label class="flbl"><span class="req">*</span> 角色名称</label>
       <input class="fctl" id="role-edit-name" placeholder="请输入角色名称">
+    </div>
+    <div class="frow">
+      <label class="flbl"><span class="req">*</span> 角色类型</label>
+      <select class="fctl" id="role-edit-type">
+        <option value="admin">管理员</option>
+        <option value="superadmin">超级管理员</option>
+      </select>
     </div>
     <div class="frow">
       <label class="flbl">角色描述</label>

@@ -2380,8 +2380,9 @@ function initUserRoleData(){
   }
   if(!localStorage.getItem(SK_ROLES)){
     const defaultRoles = [
-      {id:'r1',name:'数据统计',desc:'-',status:true,createdAt:'2022-06-17 18:06:19',permissions:['data','stats']},
-      {id:'r2',name:'管理员',desc:'管理员',status:true,createdAt:'2022-03-24 17:15:25',permissions:['data','banner','activity','official','team','reward','stats','system','user','role','message','notice']}
+      {id:'r1',name:'普通用户',type:'admin',desc:'普通管理员',status:true,createdAt:'2022-06-17 18:06:19',permissions:['admin']},
+      {id:'r2',name:'管理员',type:'admin',desc:'管理员',status:true,createdAt:'2022-03-24 17:15:25',permissions:['projMgr','admin','dept','receiver']},
+      {id:'r3',name:'超级管理员',type:'superadmin',desc:'超级管理员，可授予其他管理员权限',status:true,createdAt:'2022-01-01 10:00:00',permissions:['projMgr','admin','dept','receiver']}
     ];
     ls(SK_ROLES, defaultRoles);
   }
@@ -2494,6 +2495,7 @@ function renderRoleList(){
   const roles = ls(SK_ROLES) || [];
   const start = (umRolePage-1)*PAGE_SIZE;
   const pageRoles = roles.slice(start, start+PAGE_SIZE);
+  const currentUserIsSuperAdmin = checkIsSuperAdmin();
   
   return `
   <div class="card">
@@ -2502,6 +2504,14 @@ function renderRoleList(){
         <div class="filter-item">
           <span class="filter-label">角色</span>
           <input class="filter-input" id="um-f-role" placeholder="请输入角色" style="min-width:180px">
+        </div>
+        <div class="filter-item">
+          <span class="filter-label">角色类型</span>
+          <select class="filter-select" id="um-f-role-type" style="min-width:120px">
+            <option value="">请选择类型</option>
+            <option value="admin">管理员</option>
+            <option value="superadmin">超级管理员</option>
+          </select>
         </div>
         <div class="filter-item">
           <span class="filter-label">状态</span>
@@ -2520,6 +2530,7 @@ function renderRoleList(){
       <table class="dtable">
         <thead><tr>
           <th>角色名称</th>
+          <th>角色类型</th>
           <th>角色描述</th>
           <th>状态</th>
           <th>创建时间</th>
@@ -2528,14 +2539,15 @@ function renderRoleList(){
         <tbody>
           ${pageRoles.map(r=>`<tr>
             <td>${r.name}</td>
+            <td><span class="tag ${r.type==='superadmin'?'tag-orange':'tag-blue'}">${r.type==='superadmin'?'超级管理员':'管理员'}</span></td>
             <td>${r.desc||'-'}</td>
             <td><div class="um-toggle ${r.status?'on':''}" onclick="toggleRoleStatus('${r.id}')"></div></td>
             <td>${r.createdAt||'-'}</td>
             <td>
-              <button class="action-link" onclick="openRolePerm('${r.id}')">权限管理</button>
+              ${currentUserIsSuperAdmin ? `<button class="action-link" onclick="openRolePerm('${r.id}')">权限管理</button>` : ''}
               <button class="action-link action-link-green" onclick="openRoleEdit('${r.id}')">编辑</button>
             </td>
-          </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>'}
+          </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>'}
         </tbody>
       </table>
       <div style="display:flex;justify-content:flex-end;margin-top:16px;align-items:center;gap:8px">
@@ -2712,11 +2724,13 @@ function openRoleEdit(id){
     if(role){
       title.textContent = '编辑角色';
       g('role-edit-name').value = role.name||'';
+      g('role-edit-type').value = role.type||'admin';
       g('role-edit-desc').value = role.desc||'';
     }
   }else{
     title.textContent = '新增角色';
     g('role-edit-name').value = '';
+    g('role-edit-type').value = 'admin';
     g('role-edit-desc').value = '';
   }
   
@@ -2725,6 +2739,7 @@ function openRoleEdit(id){
 
 function saveRoleEdit(){
   const name = g('role-edit-name').value.trim();
+  const type = g('role-edit-type').value;
   const desc = g('role-edit-desc').value.trim();
   
   if(!name){showMsg('请输入角色名称','e');return;}
@@ -2735,12 +2750,14 @@ function saveRoleEdit(){
     const idx = roles.findIndex(r=>r.id===editingRoleId);
     if(idx>=0){
       roles[idx].name = name;
+      roles[idx].type = type;
       roles[idx].desc = desc;
     }
   }else{
     roles.push({
       id: 'r'+Date.now(),
       name: name,
+      type: type,
       desc: desc,
       status: true,
       createdAt: fmtTime(new Date()),
@@ -2759,13 +2776,27 @@ function filterRoles(){
 }
 
 function resetRoleFilter(){
-  const els = ['um-f-role','um-f-role-status'];
+  const els = ['um-f-role','um-f-role-type','um-f-role-status'];
   els.forEach(id=>{const el=g(id);if(el)el.value='';});
   render();
 }
 
+// 检查当前用户是否为超级管理员
+function checkIsSuperAdmin(){
+  // 这里简化处理，默认当前登录用户是超级管理员
+  // 实际项目中应该从用户信息中获取角色类型
+  const currentUserRole = localStorage.getItem('teg_current_user_role') || 'superadmin';
+  return currentUserRole === 'superadmin';
+}
+
 // 打开角色权限管理弹窗
 function openRolePerm(id){
+  // 检查是否为超级管理员
+  if(!checkIsSuperAdmin()){
+    showMsg('只有超级管理员才能进行权限管理','e');
+    return;
+  }
+  
   currentPermRoleId = id;
   const roles = ls(SK_ROLES);
   const role = roles.find(r=>r.id===id);
@@ -2775,7 +2806,6 @@ function openRolePerm(id){
     
     // 重置所有复选框
     document.querySelectorAll('.perm-item-check').forEach(cb=>cb.checked=false);
-    document.querySelectorAll('.perm-group-check').forEach(cb=>cb.checked=false);
     g('perm-select-all').checked = false;
     
     // 设置已有权限
@@ -2783,19 +2813,12 @@ function openRolePerm(id){
     perms.forEach(p=>{
       const cb = document.querySelector(`.perm-item-check[data-perm="${p}"]`);
       if(cb) cb.checked = true;
-      const gcb = document.querySelector(`.perm-group-check[data-group="${p}"]`);
-      if(gcb) gcb.checked = true;
     });
     
-    // 检查分组状态
-    ['data','system'].forEach(group=>{
-      const items = document.querySelectorAll(`.perm-item-check[data-group="${group}"]`);
-      const gcb = document.querySelector(`.perm-group-check[data-group="${group}"]`);
-      if(gcb){
-        const allChecked = Array.from(items).every(cb=>cb.checked);
-        gcb.checked = allChecked;
-      }
-    });
+    // 检查是否全选
+    const allItems = document.querySelectorAll('.perm-item-check');
+    const allChecked = Array.from(allItems).every(cb=>cb.checked);
+    g('perm-select-all').checked = allChecked;
   }
   
   g('modal-role-perm').classList.add('show');
@@ -2804,13 +2827,6 @@ function openRolePerm(id){
 function toggleAllPerms(el){
   const checked = el.checked;
   document.querySelectorAll('.perm-item-check').forEach(cb=>cb.checked=checked);
-  document.querySelectorAll('.perm-group-check').forEach(cb=>cb.checked=checked);
-}
-
-function togglePermGroup(group){
-  const gcb = document.querySelector(`.perm-group-check[data-group="${group}"]`);
-  const checked = gcb ? gcb.checked : false;
-  document.querySelectorAll(`.perm-item-check[data-group="${group}"]`).forEach(cb=>cb.checked=checked);
 }
 
 function saveRolePerm(){
@@ -2819,13 +2835,8 @@ function saveRolePerm(){
   
   if(idx>=0){
     const perms = [];
-    document.querySelectorAll('.perm-group-check:checked').forEach(cb=>{
-      perms.push(cb.dataset.group);
-    });
     document.querySelectorAll('.perm-item-check:checked').forEach(cb=>{
-      if(!perms.includes(cb.dataset.perm)){
-        perms.push(cb.dataset.perm);
-      }
+      perms.push(cb.dataset.perm);
     });
     roles[idx].permissions = perms;
     ls(SK_ROLES, roles);
