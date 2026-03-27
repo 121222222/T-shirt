@@ -577,40 +577,12 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
 
 <!-- ===== 弹窗：新增/编辑用户 ===== -->
 <div class="modal-ov" id="modal-user-edit">
-<div class="modal" style="max-width:560px">
+<div class="modal" style="max-width:420px">
   <div class="modal-hd"><div class="modal-tt" id="user-edit-title">新增</div><button class="modal-cl" onclick="closeM('modal-user-edit')">✕</button></div>
   <div class="modal-bd">
     <div class="frow">
-      <label class="flbl"><span class="req">*</span> 头像</label>
-      <div class="np-img-upload" style="width:80px;height:80px" id="user-avatar-upload" onclick="document.getElementById('user-avatar-file').click()">
-        <div style="font-size:24px;color:#ccc" id="user-avatar-placeholder">☁</div>
-        <div class="np-img-upload-text" id="user-avatar-text">请上传头像</div>
-      </div>
-      <input type="file" id="user-avatar-file" accept="image/*" style="display:none" onchange="uploadUserAvatar(this)">
-      <div style="font-size:11px;color:#999;margin-top:4px">建议尺寸大小小于10M</div>
-    </div>
-    <div class="frow">
-      <label class="flbl"><span class="req">*</span> 姓名</label>
-      <input class="fctl" id="user-edit-name" placeholder="请输入姓名">
-    </div>
-    <div class="frow">
-      <label class="flbl"><span class="req">*</span> 用户名</label>
-      <input class="fctl" id="user-edit-username" placeholder="请输入用户名">
-    </div>
-    <div class="frow">
-      <label class="flbl"><span class="req">*</span> 手机号</label>
-      <input class="fctl" id="user-edit-phone" placeholder="请输入手机号" style="background:#f5f5f5">
-    </div>
-    <div class="frow">
-      <label class="flbl"><span class="req">*</span> 密码</label>
-      <div style="position:relative">
-        <input class="fctl" id="user-edit-pwd" type="password" placeholder="请输入密码" value="••••••••••••••••">
-        <span style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;color:#999" onclick="togglePwdVisible()">👁</span>
-      </div>
-    </div>
-    <div class="frow">
-      <label class="flbl"><span class="req">*</span> 邮箱</label>
-      <input class="fctl" id="user-edit-email" placeholder="请输入邮箱">
+      <label class="flbl"><span class="req">*</span> 企业微信名</label>
+      <input class="fctl" id="user-edit-name" placeholder="请输入企业微信名">
     </div>
   </div>
   <div class="modal-ft">

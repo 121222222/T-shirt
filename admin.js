@@ -729,7 +729,15 @@ function renderPageConfig(pageIdx){
     </div>`;
 
   // 隐藏/显示toggle
-  const toggleLine=(label,field)=>`<div class="np-field-row"><span style="font-size:14px;font-weight:600">${label}</span> <span style="font-size:12px;color:#999;margin-left:4px">隐藏</span> <div class="np-toggle ${pd.toggles[field]?'on':''}" onclick="npData.pages[${pageIdx}].toggles['${field}']=!npData.pages[${pageIdx}].toggles['${field}'];renderNewProject()"></div></div>`;
+  const toggleLine=(label,field)=>{
+    // logoHide 和 loadingHide 是直接存储在页面数据上的，不是在 toggles 中
+    const isDirectField = field === 'logoHide' || field === 'loadingHide';
+    const currentValue = isDirectField ? pd[field] : pd.toggles[field];
+    const toggleAction = isDirectField 
+      ? `npData.pages[${pageIdx}].${field}=!npData.pages[${pageIdx}].${field};renderNewProject();npSyncConfigToIframe()`
+      : `npData.pages[${pageIdx}].toggles['${field}']=!npData.pages[${pageIdx}].toggles['${field}'];renderNewProject()`;
+    return `<div class="np-field-row"><span style="font-size:14px;font-weight:600">${label}</span> <span style="font-size:12px;color:#999;margin-left:4px">隐藏</span> <div class="np-toggle ${currentValue?'on':''}" onclick="${toggleAction}"></div></div>`;
+  };
 
   // 按页面类型返回不同配置
   switch(pageIdx){
@@ -2460,9 +2468,7 @@ function renderUserList(){
       <table class="dtable">
         <thead><tr>
           <th>序号</th>
-          <th>姓名</th>
-          <th>用户名</th>
-          <th>联系方式</th>
+          <th>企业微信名</th>
           <th>角色名称</th>
           <th>状态</th>
           <th>最近登录时间</th>
@@ -2473,14 +2479,11 @@ function renderUserList(){
           ${pageUsers.map((u,i)=>`<tr>
             <td>${start+i+1}</td>
             <td>${u.name}</td>
-            <td>${u.username}</td>
-            <td>${u.phone||'-'}</td>
             <td>${u.role}</td>
             <td><div class="um-toggle ${u.status?'on':''}" onclick="toggleUserStatus('${u.id}')"></div></td>
             <td>${u.lastLogin||'-'}</td>
             <td>${u.createdAt||'-'}</td>
             <td>
-              <button class="action-link" onclick="resetUserPwd('${u.id}')">重置密码</button>
               <button class="action-link action-link-green" onclick="openUserEdit('${u.id}')">编辑</button>
               <button class="action-link action-link-red" onclick="deleteUser('${u.id}')">删除</button>
             </td>
@@ -2595,7 +2598,6 @@ function toggleRoleStatus(id){
 // 打开用户编辑弹窗
 function openUserEdit(id){
   editingUserId = id || null;
-  userAvatarData = '';
   const modal = g('modal-user-edit');
   const title = g('user-edit-title');
   
@@ -2605,21 +2607,10 @@ function openUserEdit(id){
     if(user){
       title.textContent = '编辑';
       g('user-edit-name').value = user.name||'';
-      g('user-edit-username').value = user.username||'';
-      g('user-edit-phone').value = user.phone||'';
-      g('user-edit-email').value = user.email||'';
-      g('user-edit-pwd').value = '••••••••••••••••';
-      userAvatarData = user.avatar||'';
-      updateAvatarPreview();
     }
   }else{
     title.textContent = '新增';
     g('user-edit-name').value = '';
-    g('user-edit-username').value = '';
-    g('user-edit-phone').value = '';
-    g('user-edit-email').value = '';
-    g('user-edit-pwd').value = '';
-    updateAvatarPreview();
   }
   
   modal.classList.add('show');
@@ -2652,12 +2643,8 @@ function togglePwdVisible(){
 
 function saveUserEdit(){
   const name = g('user-edit-name').value.trim();
-  const username = g('user-edit-username').value.trim();
-  const phone = g('user-edit-phone').value.trim();
-  const email = g('user-edit-email').value.trim();
   
-  if(!name){showMsg('请输入姓名','e');return;}
-  if(!username){showMsg('请输入用户名','e');return;}
+  if(!name){showMsg('请输入企业微信名','e');return;}
   
   const users = ls(SK_USERS);
   
@@ -2665,19 +2652,11 @@ function saveUserEdit(){
     const idx = users.findIndex(u=>u.id===editingUserId);
     if(idx>=0){
       users[idx].name = name;
-      users[idx].username = username;
-      users[idx].phone = phone;
-      users[idx].email = email;
-      users[idx].avatar = userAvatarData;
     }
   }else{
     users.push({
       id: 'u'+Date.now(),
-      avatar: userAvatarData,
       name: name,
-      username: username,
-      phone: phone,
-      email: email,
       role: '管理员',
       status: true,
       lastLogin: '-',
