@@ -335,6 +335,11 @@ html, body {
     <div class="welcome-logo">
       <span>TEG办公室</span> × <span>企业IT</span>
     </div>
+    <!-- loading 图标显示区域（管理后台预览用） -->
+    <div class="welcome-loading" style="margin-top:30px;width:100%;text-align:center;">
+      <div class="welcome-spinner-icon" style="font-size:28px;animation:spin 1s linear infinite;display:inline-block;">⏳</div>
+      <div class="welcome-loading-percent" style="margin-top:12px;font-size:14px;color:#fff;">100%</div>
+    </div>
   </div>
   <div class="welcome-enter">
     <button class="btn-primary" onclick="startAuth()">选择款式及尺码</button>
@@ -1188,9 +1193,9 @@ function applyAdminConfig(pageIdx) {
     
     // 应用logo图片
     const logoEl = document.querySelector('.welcome-logo');
-    if (logoEl && pageData && pageData.logoImg && !pageData.toggles?.logoHide) {
+    if (logoEl && pageData && pageData.logoImg && !pageData.logoHide) {
       logoEl.innerHTML = `<img src="${pageData.logoImg}" style="max-width:190px;max-height:100px;" alt="logo">`;
-    } else if (logoEl && pageData && pageData.toggles?.logoHide) {
+    } else if (logoEl && pageData && pageData.logoHide) {
       logoEl.style.display = 'none';
     }
     
@@ -1200,16 +1205,40 @@ function applyAdminConfig(pageIdx) {
       const loadingSpinner = document.querySelector('.spinner-icon');
       const loadingPercent = document.getElementById('loading-percent');
       
-      // 应用loading图片
-      if (loadingSpinner && pageData.loadingImg && !pageData.toggles?.loadingHide) {
-        loadingSpinner.innerHTML = `<img src="${pageData.loadingImg}" style="width:100px;height:100px;" alt="loading">`;
+      // 欢迎页的 loading 显示区域（用于管理后台实时预览）
+      const welcomeLoadingDiv = document.querySelector('.welcome-loading');
+      const welcomeSpinnerIcon = document.querySelector('.welcome-spinner-icon');
+      const welcomeLoadingPercent = document.querySelector('.welcome-loading-percent');
+      
+      // 应用loading图片到page-loading页面（保持旋转动画）
+      if (loadingSpinner && pageData.loadingImg && !pageData.loadingHide) {
+        // 让图片自身旋转，而不是容器旋转
+        loadingSpinner.innerHTML = `<img src="${pageData.loadingImg}" style="width:50px;height:50px;animation:spin 1s linear infinite;" alt="loading">`;
         loadingSpinner.style.animation = 'none';
-        loadingSpinner.style.fontSize = 'inherit';
+      }
+      
+      // 应用loading图片到欢迎页显示区域（管理后台预览）
+      if (welcomeSpinnerIcon && pageData.loadingImg && !pageData.loadingHide) {
+        // 让图片自身旋转，而不是容器旋转
+        welcomeSpinnerIcon.innerHTML = `<img src="${pageData.loadingImg}" style="width:30px;height:30px;animation:spin 1s linear infinite;" alt="loading">`;
+        welcomeSpinnerIcon.style.animation = 'none';
+        welcomeSpinnerIcon.style.display = 'inline-block';
+        if (welcomeLoadingDiv) welcomeLoadingDiv.style.display = 'block';
+      } else if (welcomeLoadingDiv && pageData.loadingHide) {
+        welcomeLoadingDiv.style.display = 'none';
+      } else if (welcomeSpinnerIcon && !pageData.loadingImg) {
+        // 没有上传自定义图片时，显示默认emoji
+        welcomeSpinnerIcon.innerHTML = '⏳';
+        welcomeSpinnerIcon.style.fontSize = '28px';
+        if (welcomeLoadingDiv && !pageData.loadingHide) welcomeLoadingDiv.style.display = 'block';
       }
       
       // 应用百分比文字颜色
       if (loadingPercent && pageData.percentColor) {
         loadingPercent.style.color = pageData.percentColor;
+      }
+      if (welcomeLoadingPercent && pageData.percentColor) {
+        welcomeLoadingPercent.style.color = pageData.percentColor;
       }
       
       // 应用loading页面背景（与首页相同）

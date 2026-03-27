@@ -570,7 +570,10 @@ function renderPhonePreview(pageIdx){
     0:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e,#0d47a1)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center">
       <div style="font-size:20px;font-weight:700">${npData.h5Title||'项目标题'}</div>
       <div style="font-size:12px;margin-top:8px;opacity:.8">${npData.h5Subtitle||'副标题'}</div>
-      ${pd.loadingHide?'':`<div style="margin-top:40px;font-size:11px;opacity:.6">100%</div>`}
+      ${pd.logoHide?'':(pd.logoImg?`<div style="margin-top:60px"><img src="${pd.logoImg}" style="max-width:190px;max-height:100px" alt="logo"></div>`:`<div style="margin-top:60px;font-size:12px;opacity:.8">TEG办公室 × 企业IT</div>`)}
+      ${pd.loadingHide?'':(pd.loadingImg?`<div style="margin-top:30px"><img src="${pd.loadingImg}" style="width:60px;height:60px;animation:spin 1s linear infinite" alt="loading"></div>`:`<div style="margin-top:30px;font-size:28px;animation:spin 1s linear infinite;display:inline-block">⏳</div>`)}
+      ${pd.loadingHide?'':`<div style="margin-top:12px;font-size:11px;color:${pd.percentColor||'#ffffff'}">100%</div>`}
+      <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
     </div>`,
     1:()=>`<div style="height:100%;background:${pd.bgImg?`url(${pd.bgImg}) center/cover`:'linear-gradient(135deg,#1a237e 0%,#283593 50%,#1565c0 100%)'};display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;padding:20px;text-align:center">
       <div style="font-size:18px;font-weight:700">${npData.h5Title||'项目标题'}</div>
