@@ -660,20 +660,53 @@ function init() {
 }
 
 function loadConfig() {
-  const saved = localStorage.getItem('teg_h5_active_project');
-  if (saved) {
-    try {
-      const proj = JSON.parse(saved);
-      projectConfig = proj;
-      // 合并后台配置
-      if (proj.styles && proj.styles.length > 0) defaultConfig.styles = proj.styles;
-      if (proj.sizes) defaultConfig.sizes = proj.sizes;
-      if (proj.addresses && proj.addresses.length > 0) defaultConfig.addresses = proj.addresses;
-      if (proj.title) defaultConfig.title = proj.title;
-      if (proj.deadline) defaultConfig.deadline = proj.deadline;
-      // 更新页面标题
-      document.querySelector('.welcome-year').textContent = proj.title ? proj.title.replace('夏季文化衫','').replace('冬季文化衫','') : '2026TEG';
-    } catch(e) {}
+  // 检查 URL 参数中是否有指定的项目 ID
+  const urlParams = new URLSearchParams(window.location.search);
+  const projectId = urlParams.get('pid');
+  
+  let configSource = null;
+  
+  if (projectId) {
+    // 通过 URL 参数加载指定项目
+    const allProjects = localStorage.getItem('teg_projects');
+    if (allProjects) {
+      try {
+        const projects = JSON.parse(allProjects);
+        const targetProject = projects.find(p => p.id === projectId);
+        if (targetProject && targetProject.h5Data) {
+          configSource = targetProject.h5Data;
+          console.log('通过 URL 参数加载项目:', targetProject.title);
+        }
+      } catch(e) {
+        console.error('解析项目数据失败:', e);
+      }
+    }
+  }
+  
+  // 如果没有通过 URL 加载到，则尝试加载活动项目
+  if (!configSource) {
+    const saved = localStorage.getItem('teg_h5_active_project');
+    if (saved) {
+      try {
+        configSource = JSON.parse(saved);
+      } catch(e) {}
+    }
+  }
+  
+  // 应用配置
+  if (configSource) {
+    projectConfig = configSource;
+    // 合并后台配置
+    if (configSource.styles && configSource.styles.length > 0) defaultConfig.styles = configSource.styles;
+    if (configSource.sizes) defaultConfig.sizes = configSource.sizes;
+    if (configSource.addresses && configSource.addresses.length > 0) defaultConfig.addresses = configSource.addresses;
+    if (configSource.title) defaultConfig.title = configSource.title;
+    if (configSource.deadline) defaultConfig.deadline = configSource.deadline;
+    // 更新页面标题
+    const yearEl = document.querySelector('.welcome-year');
+    if (yearEl && configSource.title) {
+      yearEl.textContent = configSource.title.replace('夏季文化衫','').replace('冬季文化衫','') || '2026TEG';
+    }
   }
 }
 

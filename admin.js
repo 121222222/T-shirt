@@ -313,6 +313,7 @@ function renderProjMgrTable(projs){
       <button class="action-link" onclick="openViewProject('${p.id}')">查看项目</button>
       <button class="action-link action-link-green" onclick="openEditProj('${p.id}')">项目设置</button>
       <button class="action-link action-link-orange" onclick="openProjPerm('${p.id}')">权限设置</button>
+      <button class="action-link" style="color:#9c27b0" onclick="openQRCode('${p.id}')">生成二维码</button>
       <button class="action-link action-link-red" onclick="openDeleteProj('${p.id}')">删除项目</button>
     </td>
   </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;color:#999;padding:40px">暂无数据</td></tr>';
@@ -1220,21 +1221,6 @@ function copyPreviewUrl(){
   }
 }
 
-// 下载二维码图片
-function downloadQRCode(){
-  const container = g('preview-qr-container');
-  const canvas = container ? container.querySelector('canvas') : null;
-  if(!canvas){
-    showMsg('二维码尚未生成','e');
-    return;
-  }
-  const link = document.createElement('a');
-  link.download = '文化衫H5预览二维码.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-  showMsg('二维码已下载','s');
-}
-
 // ===== 返回项目列表 =====
 function npBackToList(){
   editingProjId='';
@@ -1463,7 +1449,120 @@ function saveProjPerm(){
   showMsg('权限已保存','s');
 }
 
-// ========== 1.1.3 删除项目 ==========
+// ========== 1.1.3 生成二维码 ==========
+let currentQRCodeUrl = '';
+
+function openQRCode(projId) {
+  const projs = ls(SK.proj);
+  const proj = projs.find(p => p.id === projId);
+  if (!proj) {
+    showMsg('项目不存在', 'e');
+    return;
+  }
+  
+  // 构建预览 URL（基于当前页面的域名）
+  const baseUrl = window.location.origin + window.location.pathname.replace('admin.html', '');
+  const previewUrl = `${baseUrl}index.html?pid=${projId}`;
+  currentQRCodeUrl = previewUrl;
+  
+  // 显示项目名称
+  g('qrcode-project-name').textContent = proj.title || '未命名项目';
+  g('qrcode-url').textContent = previewUrl;
+  
+  // 检测是否为本地文件环境
+  const localTip = g('qrcode-local-tip');
+  if (localTip) {
+    const isLocal = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    localTip.style.display = isLocal ? 'block' : 'none';
+  }
+  
+  // 清空之前的二维码
+  const qrcodeContainer = g('qrcode-canvas');
+  qrcodeContainer.innerHTML = '';
+  
+  // 生成新的二维码
+  if (typeof QRCode !== 'undefined') {
+    QRCode.toCanvas(previewUrl, {
+      width: 200,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#ffffff'
+      }
+    }, function(error, canvas) {
+      if (error) {
+        console.error('二维码生成失败:', error);
+        qrcodeContainer.innerHTML = '<div style="color:#f44336;padding:20px;">二维码生成失败</div>';
+        return;
+      }
+      canvas.id = 'qrcode-img';
+      canvas.style.borderRadius = '8px';
+      qrcodeContainer.appendChild(canvas);
+    });
+  } else {
+    qrcodeContainer.innerHTML = '<div style="color:#f44336;padding:20px;">二维码库未加载</div>';
+  }
+  
+  // 显示弹窗
+  g('modal-qrcode').classList.add('show');
+}
+
+function copyQRCodeUrl() {
+  if (!currentQRCodeUrl) {
+    showMsg('链接为空', 'e');
+    return;
+  }
+  
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(currentQRCodeUrl).then(() => {
+      showMsg('链接已复制到剪贴板', 's');
+    }).catch(() => {
+      fallbackCopy(currentQRCodeUrl);
+    });
+  } else {
+    fallbackCopy(currentQRCodeUrl);
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  try {
+    document.execCommand('copy');
+    showMsg('链接已复制到剪贴板', 's');
+  } catch (e) {
+    showMsg('复制失败，请手动复制', 'e');
+  }
+  document.body.removeChild(textarea);
+}
+
+function downloadQRCode() {
+  // 尝试从项目二维码弹窗获取
+  let canvas = g('qrcode-img');
+  
+  // 如果没有，尝试从预览二维码弹窗获取
+  if (!canvas) {
+    const container = g('preview-qr-container');
+    canvas = container ? container.querySelector('canvas') : null;
+  }
+  
+  if (!canvas) {
+    showMsg('二维码未生成', 'e');
+    return;
+  }
+  
+  const link = document.createElement('a');
+  link.download = 'H5预览二维码.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+  showMsg('二维码已下载', 's');
+}
+
+// ========== 1.1.4 删除项目 ==========
 function openDeleteProj(projId){
   deleteProjId=projId;
   const projs=ls(SK.proj);
