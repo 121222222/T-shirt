@@ -680,8 +680,44 @@ html,body{width:100%;height:100%;font-family:-apple-system,BlinkMacSystemFont,'S
 </div>
 
 <div class="msg" id="gmsg"></div>
-<!-- 引入 qrcode.js 用于生成真正可扫描的二维码 -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- 引入 qrcode.js 用于生成真正可扫描的二维码 - 多CDN备用 -->
+<script>
+// 尝试加载 qrcode.js，使用多个 CDN 作为备用
+(function() {
+  var cdnList = [
+    'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+    'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js'
+  ];
+  var currentIndex = 0;
+  
+  function loadScript(url, callback, errorCallback) {
+    var script = document.createElement('script');
+    script.src = url;
+    script.onload = callback;
+    script.onerror = errorCallback;
+    document.head.appendChild(script);
+  }
+  
+  function tryLoadNext() {
+    if (currentIndex >= cdnList.length) {
+      console.error('所有 CDN 都加载失败');
+      return;
+    }
+    var url = cdnList[currentIndex];
+    console.log('尝试加载 qrcode.js:', url);
+    loadScript(url, function() {
+      console.log('qrcode.js 加载成功:', url);
+    }, function() {
+      console.warn('CDN 加载失败:', url);
+      currentIndex++;
+      tryLoadNext();
+    });
+  }
+  
+  tryLoadNext();
+})();
+</script>
 <script src="admin.js"></script>
 </body>
 </html>

@@ -1172,7 +1172,8 @@ function npPreviewH5(){
 }
 
 // 生成二维码（使用qrcode.js库生成真正可扫描的二维码）
-function generateQRCode(url){
+function generateQRCode(url, retryCount){
+  retryCount = retryCount || 0;
   const container = g('preview-qr-container');
   if(!container) return;
   
@@ -1199,8 +1200,13 @@ function generateQRCode(url){
       container.appendChild(canvas);
     });
   }else{
-    // fallback：如果qrcode.js未加载，显示提示
-    container.innerHTML = '<div style="color:#999;font-size:12px;padding:20px">二维码库加载中...<br>请稍后重试</div>';
+    // fallback：如果qrcode.js未加载，尝试延迟重试
+    if(retryCount < 3){
+      container.innerHTML = '<div style="color:#999;font-size:12px;padding:20px">二维码库加载中...<br>第' + (retryCount+1) + '次尝试</div>';
+      setTimeout(function(){ generateQRCode(url, retryCount + 1); }, 1000);
+    }else{
+      container.innerHTML = '<div style="color:#f44336;font-size:12px;padding:20px">二维码库加载失败<br><a href="' + url + '" target="_blank" style="color:#1976d2">点击直接访问链接</a></div>';
+    }
   }
 }
 
