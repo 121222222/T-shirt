@@ -1,0 +1,29 @@
+# Git 相关
+.git
+.gitignore
+
+# 开发脚本
+push.bat
+setup_git.bat
+
+# IDE 和编辑器
+.vscode
+.idea
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# Docker 相关
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 临时目录
+-p/
+
+# 文档
+README.md
+*.md
